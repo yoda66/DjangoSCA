@@ -1,11 +1,14 @@
 #!/usr/bin/python
 
 import re
+import os
 
 class ContentReader(object):
 
-  def __init__(self,name):
+  def __init__(self,projdir,name):
     self.name = name
+    self.projdir = projdir
+    self.shortname = self.name[len(self.projdir):]
     try: self.content = self.getfile()
     except: raise Exception('ContentReader Error')
 
@@ -32,5 +35,5 @@ class ContentReader(object):
   def run_check(self,exp,msg):
     res = self.grep(exp)
     if len(res) > 0:
-      print '[*] %s: %s LINE#%s' % (self.name,msg,str(res))
+      print '[*] %s: %s LINE#%s' % (self.shortname,msg,str(res))
 
