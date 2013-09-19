@@ -37,6 +37,7 @@ class DjangoFileCheck(ContentReader):
     self.run_check('.+os\.system.+','os.system')
     self.run_check('.+mark_safe.+','mark_safe')
     self.run_check('.+cPickle|Pickle.+','cPickle or Pickle in use')
+    self.run_check('.+(SELECT|select).+(FROM|from).+(WHERE|where).+','raw SQL query found')
 
 if len(sys.argv) < 2:
   print 'usage: %s <django project dir>' % (sys.argv[0])
