@@ -43,7 +43,7 @@ class SettingsCheck(object):
     except:
       raise
 
-  def required(self):
+  def requiredvars_check(self):
     #dset = dir(settings)
     for field in self.required_fields:
       try:
@@ -54,7 +54,8 @@ class SettingsCheck(object):
   def middleware_check(self):
     print '[*] MIDDLEWARE_CLASSES'
     for m in settings.MIDDLEWARE_CLASSES:
-      print '  [-] '+m
+      if not m.startswith('django'):
+        print '  [-] custom middleware: '+m
 
   def specialvars_check(self):
     for v in self.specialvars:
@@ -67,7 +68,7 @@ class SettingsCheck(object):
 
 
   def scan(self):
-    self.required()
-    self.middleware_check()
+    self.requiredvars_check()
     self.specialvars_check()
+    self.middleware_check()
 
