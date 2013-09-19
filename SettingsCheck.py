@@ -25,7 +25,7 @@ class SettingsCheck(object):
 
     self.required_fields = {
       'DEBUG', 'TEMPLATE_DEBUG', 'INSTALLED_APPS',
-      'MANAGERS', 'ADMINS', 'MIDDLEWARE_CLASSES'
+      'MANAGERS', 'ADMINS', 'MIDDLEWARE_CLASSES', 'ALLOWED_HOSTS'
     }
 
     self.specialvars = {
