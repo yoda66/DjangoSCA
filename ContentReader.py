@@ -24,7 +24,8 @@ class ContentReader(object):
     mline = []
     rxp = re.compile(exp)
     for line in self.content.split('\n'):
-      if rxp.match(line): mline.append(i)
+      if rxp.match(line):
+        mline.append(i)
       i += 1
     return mline
 

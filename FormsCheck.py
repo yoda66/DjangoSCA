@@ -9,8 +9,8 @@ class FormsCheck(ContentReader):
     try: ContentReader.__init__(self,name)
     except: raise
     self.name = name
-    if self.is_form():
-      print self.class_names()
+#    if self.is_form():
+#      print self.class_names()
 
   def is_form(self):
     if self.grep('^from django import forms$'):
