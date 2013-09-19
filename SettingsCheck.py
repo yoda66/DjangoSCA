@@ -52,10 +52,10 @@ class SettingsCheck(object):
       except: pass
 
   def middleware_check(self):
-    print '[*] MIDDLEWARE_CLASSES'
+    print '[*] Custom MIDDLEWARE_CLASSES:'
     for m in settings.MIDDLEWARE_CLASSES:
       if not m.startswith('django'):
-        print '  [-] custom middleware: '+m
+        print '  [-] '+m
 
   def specialvars_check(self):
     for v in self.specialvars:
