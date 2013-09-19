@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 
 import tempfile
 import shutil
@@ -30,23 +30,23 @@ class SettingsCheck(object):
       'DEBUG', 'INSTALLED_APPS',
       'MANAGERS', 'MIDDLEWARE_CLASSES',
       'PASSWORD_HASHERS',
-      'TEMPLATE_DEBUG',
+      'TEMPLATE_DEBUG'
     }
 
     self.specialvars = {
 	'DEBUG' : False,
 	'SESSION_COOKIE_SECURE' : True,
 	'SESSION_COOKIE_HTTP_ONLY' : True,
-	'TEMPLATE_DEBUG' : False,
+	'TEMPLATE_DEBUG' : False
     }
 
     self.middleware_shoulduse = {
         'django.contrib.sessions.middleware.SessionMiddleware',
-        'django.middleware.csrf.CsrfViewMiddleware',
+        'django.middleware.csrf.CsrfViewMiddleware'
     }
 
     self.installed_apps_recommended = {
-        'django_bleach': 'https://github.com/jsocol/bleach',
+        'django_bleach': 'https://github.com/jsocol/bleach'
     }
     self.scan()
 

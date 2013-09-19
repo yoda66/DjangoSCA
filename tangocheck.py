@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 
 import sys, os, re
 import datetime
@@ -42,6 +42,10 @@ class DjangoFileCheck(ContentReader):
     self.run_check('.*(SELECT|select).+(FROM|from).+(WHERE|where).*','SQL SELECT query found in source')
     self.run_check('.*(INSERT|insert)\s{1,}(INTO|into).+(VALUES|values)\s{1,}\(.+\).*','SQL INSERT query found in source')
     self.run_check('.*(DELETE|delete)\s{1,}(FROM|from).+(WHERE|where).*','SQL DELETE query found in source')
+
+
+if sys.version_info < (2, 6):
+    raise "Must use python 2.6 or greater"
 
 if len(sys.argv) < 2:
   print 'usage: %s <django project dir>' % (sys.argv[0])
