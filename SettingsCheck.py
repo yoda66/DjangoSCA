@@ -13,9 +13,11 @@ class SettingsCheck(object):
   def __init__(self,name,rules):
     self.name = name
     os.environ['DJANGO_SETTINGS_MODULE'] = 'settings'
+
     if not os.path.isfile(name):
-      raise
+      print '[*] Cannot find a Django settings file [%s]' % (name)
       return
+
     try:
       self.tempdir = tempfile.mkdtemp()
       sys.path.append(self.tempdir)
