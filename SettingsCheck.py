@@ -61,7 +61,7 @@ class SettingsCheck(object):
     for field in self.required_fields:
       try:
         value = getattr(settings, field)
-        if not value: print '[*] Required field [%s] has no value set.' % (field)
+        if not value: print '[*] %OWASP-CR-APIUsage: Required field [%s] has no value set.' % (field)
       except: pass
 
   def middleware_check(self):
@@ -70,17 +70,17 @@ class SettingsCheck(object):
     for m in settings.MIDDLEWARE_CLASSES:
       middleware.append(m)
       if not m.startswith('django'):
-        output += '  [-] '+m+'\n'
+        output += '  [-] %OWASP-CR-APIUsage: '+m+'\n'
     if len(output)>0:
-      print '[*] Custom MIDDLEWARE_CLASSES:'
+      print '[*] %OWASP-CR-APIUsage: Custom MIDDLEWARE_CLASSES:'
       print output,
 
     output = ''
     for ms in self.middleware_shoulduse:
       if ms not in middleware:
-        output += '  [-] WARNING: consider using "'+ms+'"\n'
+        output += '  [-] %OWASP-CR-APIUsage: consider using "'+ms+'"\n'
     if len(output)>0:
-      print '[*] Recommended MIDDLEWARE_CLASSES:'
+      print '[*] %OWASP-CR-APIUsage: Recommended MIDDLEWARE_CLASSES:'
       print output,
 
   def specialvars_check(self):
@@ -88,20 +88,20 @@ class SettingsCheck(object):
       try:
         value = getattr(settings,v)
         if value != self.specialvars[v]:
-          print '[*] WARNING: settings.%s = %s' % (v,value)
+          print '[*] %OWASP-CR-APIUsage: settings.%s = %s' % (v,value)
       except:
         pass
 
   def passwordhasher_check(self):
     ph = getattr(settings,'PASSWORD_HASHERS')
     if not re.match(r'.+\.(PBKDF2|Brcrypt).+',ph[0]):
-      print '[*] WARNING: PASSWORD_HASHERS should list PBKDF2 or Bcrypt first!'
+      print '[*] %OWASP-CR-APIUsage: PASSWORD_HASHERS should list PBKDF2 or Bcrypt first!'
 
   def installed_apps_check(self):
     for app in self.installed_apps_recommended:
       try:
         if app not in getattr(settings,'INSTALLED_APPS'):
-          print '[*] Consider using the installed app "%s" (%s)' \
+          print '[*] %OWASP-CR-APIUsage: Consider using the installed app "%s" (%s)' \
 		% (app,self.installed_apps_recommended[app])
       except:
         pass
