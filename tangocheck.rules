@@ -1,9 +1,16 @@
 ##
+##
 ## TangoCheck Parser Configuration File
 ## Author: Joff Thyer (c) 2013
 ##
+##
 
-# Required fields in settings.py
+##########################################
+## The top section of this file is used ##
+## by the Settings.py class.            ##
+##########################################
+
+# settings.py: Required Fields
 "settings_req_field","ADMINS"
 "settings_req_field","ALLOWED_HOSTS"
 "settings_req_field","DEBUG"
@@ -13,40 +20,46 @@
 "settings_req_field","PASSWORD_HASHERS"
 "settings_req_field","TEMPLATE_DEBUG"
 
-# Recommended variable settings
+# settings.py: Recommended Variable Settings
 "settings_rec_var","DEBUG","False"
 "settings_rec_var","SESSION_COOKIE_SECURE","True"
 "settings_rec_var","SESSION_COOKIE_HTTP_ONLY","True"
 "settings_rec_var","TEMPLATE_DEBUG","False"
 
-# Recommended middleware
+# settings.py: Recommended Middleware
 "settings_rec_middleware","django.contrib.sessions.middleware.SessionMiddleware"
 "settings_rec_middleware","django.middleware.csrf.CsrfViewMiddleware"
 
-# Recommended apps
+# settings.py: Recommended Installed Apps
 "settings_rec_apps","django_bleach","https://github.com/jsocol/bleach"
 
-# Warnings about import modules
+
+############################################
+## The lower section of this file is used ##
+## by the MyParser.py class.              ##
+############################################
+
+# source code import module checks
 "import","Pickle","%OWASP-CR-APIUsage: import Pickle"
 "import","cPickle","%OWASP-CR-APIUsage: import cPickle"
 "import","mark_safe","%OWASP-CR-APIUsage: import mark_safe"
 
-# Warnings about Python string variables
+# source code string variable checks
 "string",".*(SELECT|select).+(FROM|from).+(WHERE|where).*","%OWASP-CR-APIUsage: SQL SELECT query found"
 "string",".*(INSERT|insert)\s{1,}(INTO|into).+(VALUES|values)\s{1,}\(.+\).*","%OWASP-CR-APIUsage: SQL INSERT query found"
 "string",".*(DELETE|delete)\s{1,}(FROM|from).+(WHERE|where).*","%OWASP-CR-APIUsage: SQL DELETE query found"
 
-# Warnings searched across all code source
-# This category below is performed using a regular expression search
-# across the entire input file presented
+# source code general regular expression searches
 "general","@csrf_exempt$|.+csrf_exempt\s{1,}=\s{1,}True.+","%OWASP-CR-InputValidation: csrf_exempt"
 "general",".*mark_safe\(.+\).*","%OWASP-CR-ResourceUsage: mark_safe() function call"
 "general",".*os\.system\(.+\).*","%OWASP-CR-ResourceUsage: os.system() function call"
 "general",".*random\.random\(\).*","%OWASP-CR-ResourceUsage: random.random() function call"
 "general",".*subprocess\.(call|check).*","%OWASP-CR-ResourceUsage: subprocess.call()|check() function call"
 
-# Warnings searched in Django templates
+# template file regular expression searches
 "template",".+\|safe.+","%OWASP-CR-APIUsage: { |safe } variable"
 "template",".+autoescape\s{1,}off.+","%OWASP-CR-APIUsage: {% autoescape off %}"
 
-
+##
+## End of File
+##

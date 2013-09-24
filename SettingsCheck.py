@@ -60,14 +60,29 @@ class SettingsCheck(object):
       elif row[0] == 'settings_rec_var':
         self.b_vars[row[1]] = row[2]
 
-  def requiredvars_check(self):
+
+  def __required_fields(self):
     for field in self.b_fields:
       try:
-        value = getattr(settings, field)
-        if not value: print '[*] %OWASP-CR-APIUsage: Required field [%s] has no value set.' % (field)
-      except: pass
+        if not getattr(settings, field):
+          print '[*] %%OWASP-CR-APIUsage: Required field [%s] has no value set.' % (field)
+      except:
+        print '[*] %%OWASP-CR-APIUsage: Required field [%s] does not exist.' % (field)
+        pass
 
-  def middleware_check(self):
+
+  def __recommended_variable_settings(self):
+    for v in self.b_vars:
+      try:
+        value = getattr(settings,v)
+        if value != self.b_vars[v]:
+          print '[*] %%OWASP-CR-APIUsage: Incorrect recommended variable setting [%s = %s]' % (v,value)
+      except:
+        print '[*] %%OWASP-CR-APIUsage: Recommended variable [%s] does not exist.' % (v)
+        pass
+
+
+  def __recommended_middleware(self):
     output = ''
     middleware = []
     for m in settings.MIDDLEWARE_CLASSES:
@@ -85,34 +100,31 @@ class SettingsCheck(object):
       print '[*] %OWASP-CR-APIUsage: Recommended MIDDLEWARE_CLASSES:'
       print output,
 
-  def specialvars_check(self):
-    for v in self.b_vars:
-      try:
-        value = getattr(settings,v)
-        if value != self.b_vars[v]:
-          print '[*] %OWASP-CR-APIUsage: settings.%s = %s' % (v,value)
-      except:
-        pass
 
-  def passwordhasher_check(self):
+  def __recommended_apps(self):
+    output = ''
+    for app in self.b_apps:
+      try:
+        if app not in getattr(settings,'INSTALLED_APPS'):
+          output += '  [-] %%OWASP-CR-APIUsage: Consider using installed app "%s" (%s)' \
+		% (app,self.b_apps[app])
+      except:
+        output += '  [-] %%OWASP-CR-APIUsage: Recommended installed app [%s] is not configured.' % (app)
+        pass
+    if len(output)>0:
+      print '[*] %OWASP-CR-APIUsage: Recommended INSTALLED_APPS:'
+      print output,
+
+
+  def __password_hashers(self):
     ph = getattr(settings,'PASSWORD_HASHERS')
     if not re.match(r'.+\.(PBKDF2|Brcrypt).+',ph[0]):
       print '[*] %OWASP-CR-APIUsage: PASSWORD_HASHERS should list PBKDF2 or Bcrypt first!'
 
-  def installed_apps_check(self):
-    for app in self.b_apps:
-      try:
-        if app not in getattr(settings,'INSTALLED_APPS'):
-          print '[*] %OWASP-CR-APIUsage: Consider using the installed app "%s" (%s)' \
-		% (app,self.installed_apps_recommended[app])
-      except:
-        pass
-
-
   def scan(self):
-    self.requiredvars_check()
-    self.specialvars_check()
-    self.passwordhasher_check()
-    self.middleware_check()
-    self.installed_apps_check()
+    self.__required_fields()
+    self.__recommended_variable_settings()
+    self.__recommended_middleware()
+    self.__recommended_apps()
+    self.__password_hashers()
 

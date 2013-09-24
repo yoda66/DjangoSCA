@@ -39,6 +39,9 @@ if not os.path.isdir(projdir):
   print 'project directory does not exist or is not a directory'
   sys.exit(1)
 
+# set the rules file name
+rulesfile = 'tangocheck.rules'
+
 print """
 ___________________________________________________________
 
@@ -48,13 +51,12 @@ ___________________________________________________________
   Date of Test......: %s
 ___________________________________________________________
 
-
 [*]---------------------------------
 [*] STAGE 1: Project Settings Tests 
 [*]---------------------------------
-""" % (projdir,datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
+[*]""" % (projdir,datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
 try:
-  SettingsCheck(projdir+'/settings.py','tangocheck.rules')
+  SettingsCheck(projdir+'/settings.py',rulesfile)
 except:
   raise
 
@@ -63,12 +65,13 @@ print """
 [*] STAGE 2: Testing ALL directories and files
 [*] .... Warning - This may take some time ....
 [*]---------------------------------------------
-"""
+[*]"""
 for root, dirs, files in os.walk(projdir):
   for f in files:
     fullpath = root + '/' + f
     if re.match(r'^[a-zA-Z0-9]+.+\.(py|html|txt)$',f):
       try:
-        DjangoFileCheck(projdir,fullpath,'tangocheck.rules')
+        DjangoFileCheck(projdir,fullpath,rulesfile)
       except:
         raise
+
