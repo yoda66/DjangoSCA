@@ -3,6 +3,7 @@
 import re
 import ast
 import csv
+import xml.etree.ElementTree as ET
 
 class MyParser(ast.NodeVisitor):
 
@@ -32,13 +33,16 @@ class MyParser(ast.NodeVisitor):
     self.visit(node)
 
 
-  def nonast_parse(self,shortname,code):
+  def nonast_parse(self,projdir,shortname,code):
     self.shortname = shortname
     self.content = code
     try: self.__rxp_nonast_check(self.b_general,self.b_general_re)
     except: raise
     if self.__istemplate():
       try: self.__rxp_nonast_check(self.b_template,self.b_template_re)
+      except: raise
+    elif re.match(r'.*/crossdomain\.xml',shortname):
+      try: self.__crossdomain_xml(projdir+'/'+shortname)
       except: raise
 
 
@@ -84,6 +88,25 @@ class MyParser(ast.NodeVisitor):
     except re.error as e:
       print '__load_rules(): regex compiled failed for [%s] [%s]' % (r,e)
       raise
+
+
+  def __crossdomain_xml(self,filename):
+    tree = ET.parse(filename)
+    troot = tree.getroot()
+    site_control = troot.find('site-control').attrib['permitted-cross-domain-policies']
+    if site_control == 'master-only':
+      self.warnings.append('L____: %s: crossdomain "master-only" site control enabled' % (self.shortname))
+    elif site_control == 'by-ftp-filename':
+      self.warnings.append('L____: %s: URLS ending in crossdomain.xml can serve up cross domain policy' % (self.shortname))
+    elif site_control == 'by-content-type':
+      self.warnings.append('L____: %s: Files with text/x-cross-domain-policy header can serve up cross domain policy' % (self.shortname))
+
+    for access in troot.findall('allow-access-from'):
+      if re.match(r'^\*',access.attrib['domain']):
+        self.warnings.append('L____: %s: Wildcard character in domain attrib [%s]' % (self.shortname,access.attrib['domain']))
+      if re.match(r'false',access.attrib['secure'],re.IGNORECASE):
+        self.warnings.append('L____: %s: Non-secure protocol access for domain [%s]' % (self.shortname,access.attrib['domain']))
+
 
 
   def __rxp_ast_check(self,mstr,node,sset,rset):
