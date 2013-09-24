@@ -2,52 +2,31 @@
 
 import re
 import ast
+import csv
 
 class MyParser(ast.NodeVisitor):
 
-  def __init__(self):
+  def __init__(self,rulesfile):
     self.debug = False
-    self.rxp = re.compile(r'<(.+) object at (.+)>')
+
     self.classes = []
     self.functions = []
     self.warnings = []
+    self.rxp = re.compile(r'<(.+) object at (.+)>')
 
-    self.b_import = {
-      'Pickle': '%OWASP-CR-APIUsage: import Pickle',
-      'cPickle': '%OWASP-CR-APIUsage: import cPickle',
-      'mark_safe': '%OWASP-CR-APIUsage: import mark_safe',
-    }
-    try: self.b_import_re = [re.compile(r) for r in self.b_import]
-    except: raise
+    # dictionaries for rules checking
+    self.b_imports = {}
+    self.b_strings = {}
+    self.b_general = {}
+    self.b_template = {}
 
-    self.b_func = {
-      '@csrf_exempt$|.+csrf_exempt\s{1,}=\s{1,}True.+':
-	'%OWASP-CR-InputValidation: csrf_exempt',
-      '.*mark_safe\(.+\).*':
-	'%OWASP-CR-ResourceUsage: mark_safe() function call',
-      '.*os\.system\(.+\).*':
-	'%OWASP-CR-ResourceUsage: os.system() function call',
-      '.*random\.random\(\).*':
-	'%OWASP-CR-ResourceUsage: random.random() PRNG function call',
-      '.*subprocess\.(call|check).*':
-	'%OWASP-CR-ResourceUsage: subprocess.call() or subprocess.check_*() function call',
-    }
-    try: self.b_func_re = [re.compile(r) for r in self.b_func]
-    except: raise
-
-    self.b_str = {
-      '.*(SELECT|select).+(FROM|from).+(WHERE|where).*':
-		'%OWASP-CR-APIUsage: SQL SELECT query found',
-      '.*(INSERT|insert)\s{1,}(INTO|into).+(VALUES|values)\s{1,}\(.+\).*':
-		'%OWASP-CR-APIUsage: SQL INSERT query found',
-      '.*(DELETE|delete)\s{1,}(FROM|from).+(WHERE|where).*':
-		'%OWASP-CR-APIUsage: SQL DELETE query found',
-    }
-    try: self.b_str_re = [re.compile(r) for r in self.b_str]
-    except: raise
+    try:
+      self.__load_rules(rulesfile)
+    except:
+      raise
 
 
-  def parse(self,shortname,code):
+  def ast_parse(self,shortname,code):
     node = ast.parse(code)
     self.shortname = shortname
     self.visit(node)
@@ -56,13 +35,55 @@ class MyParser(ast.NodeVisitor):
   def nonast_parse(self,shortname,code):
     self.shortname = shortname
     self.content = code
-    try: self.__rxp_nonast_check(self.b_func,self.b_func_re)
-    except: pass
+    try: self.__rxp_nonast_check(self.b_general,self.b_general_re)
+    except: raise
+    if self.__istemplate():
+      try: self.__rxp_nonast_check(self.b_template,self.b_template_re)
+      except: raise
 
 
   def print_warnings(self):
     for w in self.warnings:
       print '%s' % (w)
+
+
+  def __load_rules(self,rulesfile):
+    try:
+      f = open(rulesfile, 'r')
+    except:
+      print '__load_rules(): failed to open rules file'
+      raise
+    for row in csv.reader(f,delimiter=',',quotechar='"'):
+      if len(row) == 0 or re.match(r'^#.+',row[0]): continue
+      if row[0] == 'import':
+        self.b_imports[row[1]] = row[2]
+      elif row[0] == 'string':
+        self.b_strings[row[1]] = row[2]
+      elif row[0] == 'general':
+        self.b_general[row[1]] = row[2]
+      elif row[0] == 'template':
+        self.b_template[row[1]] = row[2]
+
+    try:
+      self.b_imports_re = [re.compile(r) for r in self.b_imports]
+    except re.error as e:
+      print '__load_rules(): regex compiled failed for [%s] [%s]' % (r,e)
+      raise
+    try:
+      self.b_strings_re = [re.compile(r) for r in self.b_strings]
+    except re.error as e:
+      print '__load_rules(): regex compiled failed for [%s] [%s]' % (r,e)
+      raise
+    try:
+      self.b_general_re = [re.compile(r) for r in self.b_general]
+    except re.error as e:
+      print '__load_rules(): regex compiled failed for [%s] [%s]' % (r,e)
+      raise
+    try:
+      self.b_template_re = [re.compile(r) for r in self.b_template]
+    except re.error as e:
+      print '__load_rules(): regex compiled failed for [%s] [%s]' % (r,e)
+      raise
 
 
   def __rxp_ast_check(self,mstr,node,sset,rset):
@@ -78,6 +99,10 @@ class MyParser(ast.NodeVisitor):
       except:
         print 'rxp_ast_check(): %s' % (re.error)
         raise
+
+  def __istemplate(self):
+    if len(self.__grep('{%|%}|{{|}}')) > 0: return True
+    return False
 
   def __grep(self,exp):
     if not self.content: return []
@@ -99,20 +124,15 @@ class MyParser(ast.NodeVisitor):
 
   def visit_Import(self,node):
     if self.debug: print 'visit_Import(): %s (%d)' % (node.names[0].name,node.lineno)
-    try: self.__rxp_ast_check(node.names[0].name,node,self.b_import,self.b_import_re)
+    try: self.__rxp_ast_check(node.names[0].name,node,self.b_imports,self.b_imports_re)
     except: pass
     self.generic_visit(node)
 
   def visit_ImportFrom(self,node):
     if self.debug: print 'visit_ImportFrom(): %s' % (node.names[0])
-    try: self.__rxp_ast_check(node.names[0].name,node,self.b_import,self.b_import_re)
+    try: self.__rxp_ast_check(node.names[0].name,node,self.b_imports,self.b_imports_re)
     except: pass
     self.generic_visit(node)
-
-#  def visit_alias(self,node):
-#    try: self.rxp_check(node.name,node,self.b_import,self.b_import_re)
-#    except: pass
-#    self.generic_visit(node)
 
   def visit_ClassDef(self,node):
     self.classes.append('%s:%d,%d' % (node.name, node.lineno, node.col_offset))
@@ -121,7 +141,7 @@ class MyParser(ast.NodeVisitor):
   def visit_FunctionDef(self,node):
     if self.debug: print 'visit_FunctionDef(): %s' % (node.name)
     self.functions.append('%s:%d,%d' % (node.name, node.lineno, node.col_offset))
-    try: self.__rxp_ast_check(node.name,node,self.b_func,self.b_func_re)
+    try: self.__rxp_ast_check(node.name,node,self.b_general,self.b_general_re)
     except: pass
     self.generic_visit(node)
 
@@ -132,7 +152,7 @@ class MyParser(ast.NodeVisitor):
 
   def visit_Str(self,node):
     if self.debug: print 'visit_Str(): %s' % (str(node.s))
-    try: self.__rxp_ast_check(str(getattr(node,'s')),node,self.b_str,self.b_str_re)
+    try: self.__rxp_ast_check(str(getattr(node,'s')),node,self.b_strings,self.b_strings_re)
     except: pass
     self.generic_visit(node)
 

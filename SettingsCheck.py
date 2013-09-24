@@ -5,11 +5,12 @@ import shutil
 import os
 import sys
 import re
+import csv
 from django.conf import settings
 
 class SettingsCheck(object):
 
-  def __init__(self,name):
+  def __init__(self,name,rules):
     self.name = name
     os.environ['DJANGO_SETTINGS_MODULE'] = 'settings'
     if not os.path.isfile(name):
@@ -25,30 +26,16 @@ class SettingsCheck(object):
     except:
       raise
 
-    self.required_fields = {
-      'ADMINS', 'ALLOWED_HOSTS',
-      'DEBUG', 'INSTALLED_APPS',
-      'MANAGERS', 'MIDDLEWARE_CLASSES',
-      'PASSWORD_HASHERS',
-      'TEMPLATE_DEBUG'
-    }
-
-    self.specialvars = {
-	'DEBUG' : False,
-	'SESSION_COOKIE_SECURE' : True,
-	'SESSION_COOKIE_HTTP_ONLY' : True,
-	'TEMPLATE_DEBUG' : False
-    }
-
-    self.middleware_shoulduse = {
-        'django.contrib.sessions.middleware.SessionMiddleware',
-        'django.middleware.csrf.CsrfViewMiddleware'
-    }
-
-    self.installed_apps_recommended = {
-        'django_bleach': 'https://github.com/jsocol/bleach'
-    }
+    self.b_apps = {}
+    self.b_fields = {}
+    self.b_middleware = {}
+    self.b_vars = {}
+    try:
+      self.__load_rules(rules)
+    except:
+      raise
     self.scan()
+
 
   def __del__(self):
     try:
@@ -56,9 +43,25 @@ class SettingsCheck(object):
     except:
       pass
 
+  def __load_rules(self,rulesfile):
+    try:
+      f = open(rulesfile, 'r')
+    except:
+      print '__load_rules(): failed to open rules file'
+      raise
+    for row in csv.reader(f,delimiter=',',quotechar='"'):
+      if len(row) == 0 or re.match(r'^#.+',row[0]): continue
+      if row[0] == 'settings_rec_apps':
+        self.b_apps[row[1]] = row[2]
+      elif row[0] == 'settings_req_field':
+        self.b_fields[row[1]] = ''
+      elif row[0] == 'settings_rec_middleware':
+        self.b_middleware[row[1]] = ''
+      elif row[0] == 'settings_rec_var':
+        self.b_vars[row[1]] = row[2]
+
   def requiredvars_check(self):
-    #dset = dir(settings)
-    for field in self.required_fields:
+    for field in self.b_fields:
       try:
         value = getattr(settings, field)
         if not value: print '[*] %OWASP-CR-APIUsage: Required field [%s] has no value set.' % (field)
@@ -74,9 +77,8 @@ class SettingsCheck(object):
     if len(output)>0:
       print '[*] %OWASP-CR-APIUsage: Custom MIDDLEWARE_CLASSES:'
       print output,
-
     output = ''
-    for ms in self.middleware_shoulduse:
+    for ms in self.b_middleware:
       if ms not in middleware:
         output += '  [-] %OWASP-CR-APIUsage: consider using "'+ms+'"\n'
     if len(output)>0:
@@ -84,10 +86,10 @@ class SettingsCheck(object):
       print output,
 
   def specialvars_check(self):
-    for v in self.specialvars:
+    for v in self.b_vars:
       try:
         value = getattr(settings,v)
-        if value != self.specialvars[v]:
+        if value != self.b_vars[v]:
           print '[*] %OWASP-CR-APIUsage: settings.%s = %s' % (v,value)
       except:
         pass
@@ -98,7 +100,7 @@ class SettingsCheck(object):
       print '[*] %OWASP-CR-APIUsage: PASSWORD_HASHERS should list PBKDF2 or Bcrypt first!'
 
   def installed_apps_check(self):
-    for app in self.installed_apps_recommended:
+    for app in self.b_apps:
       try:
         if app not in getattr(settings,'INSTALLED_APPS'):
           print '[*] %OWASP-CR-APIUsage: Consider using the installed app "%s" (%s)' \

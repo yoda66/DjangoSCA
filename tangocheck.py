@@ -7,41 +7,27 @@ from SettingsCheck import SettingsCheck
 from MyParser import MyParser
 
 
-class DjangoTemplateCheck(ContentReader):
-
-  def __init__(self,projdir,name):
-    try: ContentReader.__init__(self,projdir,name)
-    except: raise
-    self.name = name
-    if self.is_template():
-      self.scan()
-
-  def is_template(self):
-    if len(self.grep('{%|%}|{{|}}')) > 0: return True
-    return False
-
-  def parseme(self):
-#    parser = MyParser()
-#    parser.nonast_parse(self.shortname,self.content)
-#    parser.print_warnings()
-
-    self.run_check('.+\|safe.+','%OWASP-CR-APIUsage: { |safe } variable')
-    self.run_check('.+autoescape\s{1,}off.+','%OWASP-CR-APIUsage: {% autoescape off %}')
-
-
 class DjangoFileCheck(ContentReader):
 
-  def __init__(self,projdir,name):
-    try: ContentReader.__init__(self,projdir,name)
-    except: raise
-    self.name = name
+  def __init__(self,projdir,filename,rulesfile):
+    try:
+      ContentReader.__init__(self,projdir,filename)
+    except:
+      raise
+    self.rulesfile = rulesfile
     self.parseme()
 
+
   def parseme(self):
-    parser = MyParser()
-    parser.parse(self.shortname,self.content)
+    try:
+      parser = MyParser(self.rulesfile)
+    except:
+      raise
+    if re.match(r'.+\.py$',self.shortname):
+      parser.ast_parse(self.shortname,self.content)
     parser.nonast_parse(self.shortname,self.content)
     parser.print_warnings()
+
 
 if len(sys.argv) < 2:
   print 'usage: %s <django project dir>' % (sys.argv[0])
@@ -67,8 +53,10 @@ ___________________________________________________________
 [*] STAGE 1: Project Settings Tests 
 [*]---------------------------------
 """ % (projdir,datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
-try: SettingsCheck(projdir+'/settings.py')
-except: pass
+try:
+  SettingsCheck(projdir+'/settings.py','tangocheck.rules')
+except:
+  raise
 
 print """
 [*]---------------------------------------------
@@ -79,9 +67,8 @@ print """
 for root, dirs, files in os.walk(projdir):
   for f in files:
     fullpath = root + '/' + f
-    if re.match(r'^[a-zA-Z0-9]{1}.+\.(html|txt)$',f):
-      try: DjangoTemplateCheck(projdir,fullpath)
-      except: pass
-    if re.match(r'^[a-zA-Z0-9]+.+\.py$',f):
-      try: DjangoFileCheck(projdir,fullpath)
-      except: pass
+    if re.match(r'^[a-zA-Z0-9]+.+\.(py|html|txt)$',f):
+      try:
+        DjangoFileCheck(projdir,fullpath,'tangocheck.rules')
+      except:
+        raise
