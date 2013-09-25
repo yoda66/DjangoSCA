@@ -8,10 +8,11 @@ import xml.etree.ElementTree as ET
 class MyParser(ast.NodeVisitor):
 
   def __init__(self,rulesfile):
-    self.debug = False
+    self.debug = True
 
     self.classes = []
-    self.functions = []
+    self.func_assign = []
+    self.class_func_assign = {}
     self.warnings = []
     self.obj_load = {}
     self.obj_store = {}
@@ -55,12 +56,20 @@ class MyParser(ast.NodeVisitor):
 
 
   def __django_clean_validator_check(self):
-    return
-    for l in self.obj_store:
-      print 'clean_val(): %s (%s)' % (l,self.obj_store[l])
-#      print 'store(): '+clean
-#    for f in self.functions:
-#      print 'func(): '+f
+    for l in self.class_func_assign:
+      if re.match(r'^forms\.CharField',self.class_func_assign[l]):
+        classname = l.split(':')[0]
+        function_name = l.split(':')[1]
+        clean_function_name = 'clean_'+l.split(':')[1]
+        search_name = classname + ':' + clean_function_name
+        if not search_name in self.classes:
+          warning = 'L____: %s: %%OWASP-CR-APIUsage: Django forms validation function [%s] does not exist for Class [%s] assignment [%s = %s]' % ( \
+		self.shortname,
+		clean_function_name,
+		classname,
+		function_name,
+		self.class_func_assign[l])
+          self.warnings.append(warning)
 
 
   def __load_rules(self,rulesfile):
@@ -177,40 +186,58 @@ class MyParser(ast.NodeVisitor):
 
 
   def visit_ClassDef(self,node):
-    self.classes.append('%s:%d,%d' % (node.name, node.lineno, node.col_offset))
+    self.classes.append(node.name)
+    for statement in node.body:
+      if self.rxpobj.match(str(statement)).group(1) == '_ast.FunctionDef':
+        self.classes.append(node.name+':'+statement.name)
+        try: clfunctions = self.__process_func_assign(node)
+        except: clfunctions = []
+        for varassign in clfunctions:
+          key = node.name + ':' + varassign[0]
+          self.class_func_assign[key] = varassign[1]
     self.generic_visit(node)
 
 
   def visit_FunctionDef(self,node):
-    self.functions.append(node.name)
-    for statement in node.body: 
-      if self.rxpobj.match(str(statement)).group(1) == '_ast.Assign':
-        for target in statement.targets:
-          targetname = getattr(target,'id')
-          if self.rxpobj.match(str(statement.value)).group(1) == '_ast.Call':
-            rhs_func = getattr(getattr(statement.value,'func'),'value')
-            rhs_funcname = ''
-            if self.rxpobj.match(str(rhs_func)).group(1) == '_ast.Attribute':
-              rhs_funcname = getattr(rhs_func.value,'id')
-            else:
-              rhs_funcname = getattr(rhs_func,'id')
-
-            attr = self.__process_attr(getattr(statement.value,'func'))
-            if self.debug: print 'func(): (%s) %s = %s.%s' % \
-		(node.name,targetname,rhs_funcname,attr)
-#    try: self.__rxp_ast_check(node.name,node,self.b_general,self.b_general_re)
-#    except: pass
+    try: functions = self.__process_func_assign(node)
+    except: functions = []
+    for varassign in functions:
+      self.func_assign.append('%s:%s' % (node.name,varassign))
     self.generic_visit(node)
 
 
-  def __process_attr(self,node):
+  def __process_func_assign(self,node):
+    retlist = []
+    for statement in node.body:
+      if not self.rxpobj.match(str(statement)).group(1) == '_ast.Assign':
+        continue
+      for target in statement.targets:
+        targetname = getattr(target,'id')
+        if self.rxpobj.match(str(statement.value)).group(1) == '_ast.Call':
+          try: rhs_func = getattr(getattr(statement.value,'func'),'value')
+          except: raise
+          rhs_funcname = self.__process_id(rhs_func)
+          attr = self.__process_attr(getattr(statement.value,'func'))
+          rhs = '%s.%s()' % (rhs_funcname,attr)
+          retlist.append([targetname,rhs])
+    return retlist
+
+  def __process_id(self,node):
     m = self.rxpobj.match(str(node))
     retval = ''
     if m.group(1) == '_ast.Name':
       retval = getattr(node,'id')
     elif m.group(1) == '_ast.Attribute':
-      retval += '#' + self.__process_attr(node.value)
-    if self.debug: print 'attr(): %s' % retval
+      retval += self.__process_id(node.value)
+    return retval
+
+  def __process_attr(self,node):
+    m = self.rxpobj.match(str(node.value))
+    retval = ''
+    if m.group(1) == '_ast.Name':
+      retval = getattr(node,'attr')
+    elif m.group(1) == '_ast.Attribute':
+      retval += self.__process_attr(node.value) + '.' + getattr(node,'attr')
     return retval
 
   def visit_Str(self,node):
@@ -218,21 +245,6 @@ class MyParser(ast.NodeVisitor):
     try: self.__rxp_ast_check(str(getattr(node,'s')),node,self.b_strings,self.b_strings_re)
     except: pass
     self.generic_visit(node)
-
-
-#  def visit_Assign(self,node):
-#    m = self.rxpobj.match(str(node.value))
-#    if m.group(1) == '_ast.Call':
-#      lhs_node = getattr(node,'targets')[0]
-#      rhs_node = getattr(getattr(node.value,'func'),'value')
-#      temp = getattr(getattr(node.value,'func'),'ctx')
-#      lhs_m = self.rxpobj.match(str(lhs_node))
-#      rhs_m = self.rxpobj.match(str(rhs_node))
-#      if lhs_m.group(1) == '_ast.Name' and rhs_m.group(1) == '_ast.Name':
-#        print 'Assign(): %s (%s) = %s (%s) (%s)' % ( \
-#		getattr(lhs_node,'id'), lhs_m.group(2), \
-#		getattr(rhs_node,'id'), rhs_m.group(2), str(temp) )
-#    self.generic_visit(node)
 
 
   def visit_Name(self,node):

@@ -120,7 +120,7 @@ class SettingsCheck(object):
 
   def __password_hashers(self):
     ph = getattr(settings,'PASSWORD_HASHERS')
-    if not re.match(r'.+\.(PBKDF2|Brcrypt).+',ph[0]):
+    if not re.match(r'.+\.(PBKDF2|Bcrypt).+',ph[0]):
       print '[*] %OWASP-CR-APIUsage: PASSWORD_HASHERS should list PBKDF2 or Bcrypt first!'
 
   def scan(self):
