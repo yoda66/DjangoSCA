@@ -9,9 +9,9 @@ from MyParser import MyParser
 
 class DjangoFileCheck(ContentReader):
 
-  def __init__(self,projdir,filename,rulesfile):
+  def __init__(self,projdir,fullpath,rulesfile):
     try:
-      ContentReader.__init__(self,projdir,filename)
+      ContentReader.__init__(self,projdir,fullpath)
     except:
       raise
     self.rulesfile = rulesfile
@@ -25,7 +25,7 @@ class DjangoFileCheck(ContentReader):
       raise
     if re.match(r'.+\.py$',self.shortname):
       parser.ast_parse(self.shortname,self.content)
-    parser.nonast_parse(self.shortname,self.content)
+    parser.nonast_parse(self.projdir,self.shortname,self.content)
     parser.print_warnings()
 
 
@@ -69,7 +69,7 @@ print """
 for root, dirs, files in os.walk(projdir):
   for f in files:
     fullpath = root + '/' + f
-    if re.match(r'^[a-zA-Z0-9]+.+\.(py|html|txt)$',f):
+    if re.match(r'^[a-zA-Z0-9]+.+\.(py|html|txt)|crossdomain\.xml$',f):
       try:
         DjangoFileCheck(projdir,fullpath,rulesfile)
       except:

@@ -9,6 +9,9 @@ class ContentReader(object):
     self.name = name
     self.projdir = projdir
     self.shortname = self.name[len(self.projdir):]
+    if re.match(r'^/.+',self.shortname):
+      self.shortname = self.shortname[1:]
+
     try:
       self.content = self.getfile()
     except:
