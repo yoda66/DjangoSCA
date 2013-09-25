@@ -40,9 +40,9 @@
 ############################################
 
 # source code import module checks
-"import","Pickle","%OWASP-CR-APIUsage: import Pickle"
-"import","cPickle","%OWASP-CR-APIUsage: import cPickle"
-"import","mark_safe","%OWASP-CR-APIUsage: import mark_safe"
+"import","^import Pickle","%OWASP-CR-APIUsage: import Pickle"
+"import","^import cPickle","%OWASP-CR-APIUsage: import cPickle"
+"import","^from django.utils.safestring import mark_safe","%OWASP-CR-APIUsage: import mark_safe"
 
 # source code string variable checks
 "string",".*(SELECT|select).+(FROM|from).+(WHERE|where).*","%OWASP-CR-APIUsage: SQL SELECT query found"
