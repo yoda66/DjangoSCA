@@ -60,10 +60,12 @@ class MyParser(ast.NodeVisitor):
       if re.match(r'^forms\.CharField',self.class_func_assign[l]):
         classname = l.split(':')[0]
         function_name = l.split(':')[1]
-        clean_function_name = 'clean_'+l.split(':')[1]
+        lineno = int(l.split(':')[2])
+        clean_function_name = 'clean_'+function_name
         search_name = classname + ':' + clean_function_name
         if not search_name in self.classes:
-          warning = 'L____: %s: %%OWASP-CR-APIUsage: Django forms validation function [%s] does not exist for Class [%s] assignment [%s = %s]' % ( \
+          warning = 'L%04d: %s: %%OWASP-CR-APIUsage: Django forms validation function [%s] does not exist for Class [%s] assignment [%s = %s]' % ( \
+		lineno,
 		self.shortname,
 		clean_function_name,
 		classname,
@@ -212,7 +214,7 @@ class MyParser(ast.NodeVisitor):
       if not self.rxpobj.match(str(statement)).group(1) == '_ast.Assign':
         continue
       for target in statement.targets:
-        targetname = getattr(target,'id')
+        targetname = getattr(target,'id') + ':' + str(target.lineno)
         if self.rxpobj.match(str(statement.value)).group(1) == '_ast.Call':
           try: rhs_func = getattr(getattr(statement.value,'func'),'value')
           except: raise
