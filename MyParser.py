@@ -16,6 +16,7 @@ class MyParser(ast.NodeVisitor):
 
     # dictionaries for rules checking
     self.b_imports = {}
+    self.b_from_imports = {}
     self.b_strings = {}
     self.b_general = {}
     self.b_template = {}
@@ -57,6 +58,8 @@ class MyParser(ast.NodeVisitor):
       if len(row) == 0 or re.match(r'^#.+',row[0]): continue
       if row[0] == 'import':
         self.b_imports[row[1]] = row[2]
+      #elif row[0] == 'from_import':
+      #  self.b_from_imports[row[1]] = (row[2], row[3])
       elif row[0] == 'string':
         self.b_strings[row[1]] = row[2]
       elif row[0] == 'general':
@@ -123,15 +126,23 @@ class MyParser(ast.NodeVisitor):
         except: pass
 
   def visit_Import(self,node):
-    if self.debug: print 'visit_Import(): %s (%d)' % (node.names[0].name,node.lineno)
-    try: self.__rxp_ast_check(node.names[0].name,node,self.b_imports,self.b_imports_re)
-    except: pass
+    for module in node.names:
+      if self.debug: print 'visit_Import(): %s (%d)' % (module.name,node.lineno)
+      try: 
+        self.__rxp_ast_check(module.name,node,self.b_imports,self.b_imports_re)
+      except: pass
     self.generic_visit(node)
 
   def visit_ImportFrom(self,node):
-    if self.debug: print 'visit_ImportFrom(): %s' % (node.names[0])
-    try: self.__rxp_ast_check(node.names[0].name,node,self.b_imports,self.b_imports_re)
+    if self.debug: print 'visit_ImportFrom(): %s' % node.module
+    try: 
+      self.__rxp_ast_check(node.module,node,self.b_imports,self.b_imports_re)
     except: pass
+    #for name in node.names:
+    #  if self.debug: print 'visit_ImportFrom(): %s, %s' % (node.module, name)
+    #  try: 
+    #    self.__rxp_ast_check(name.name,node,self.b_imports,self.b_imports_re)
+    #  except: pass
     self.generic_visit(node)
 
   def visit_ClassDef(self,node):
