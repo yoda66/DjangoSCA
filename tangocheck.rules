@@ -55,7 +55,7 @@
 "string",".*(DELETE|delete)\s{1,}(FROM|from).+(WHERE|where).*","%OWASP-CR-APIUsage: SQL DELETE query found"
 
 # source code general regular expression searches
-"general",".*@csrf_exempt|.*csrf_exempt\s*=\s*True","%OWASP-CR-InputValidation: csrf_exempt"
+"general",".*@csrf_exempt|.*csrf_exempt\s*=\s*True.*","%OWASP-CR-InputValidation: csrf_exempt"
 "general",".*mark_safe\(.+\).*","%OWASP-CR-ResourceUsage: mark_safe() function call"
 "general",".*os\.system\(.+\).*","%OWASP-CR-ResourceUsage: os.system() function call"
 "general",".*random\.random\(\).*","%OWASP-CR-ResourceUsage: random.random() function call"
