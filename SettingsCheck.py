@@ -108,7 +108,7 @@ class SettingsCheck(object):
     for app in self.b_apps:
       try:
         if app not in getattr(settings,'INSTALLED_APPS'):
-          output += '  [-] %%OWASP-CR-APIUsage: Consider using installed app "%s" (%s)' \
+          output += '  [-] %%OWASP-CR-APIUsage: Consider using installed app "%s" (%s)\n' \
 		% (app,self.b_apps[app])
       except:
         output += '  [-] %%OWASP-CR-APIUsage: Recommended installed app [%s] is not configured.' % (app)
@@ -120,7 +120,7 @@ class SettingsCheck(object):
 
   def __password_hashers(self):
     ph = getattr(settings,'PASSWORD_HASHERS')
-    if not re.match(r'.+\.(PBKDF2|Brcrypt).+',ph[0]):
+    if not re.match(r'.+\.(PBKDF2|Bcrypt).+',ph[0]):
       print '[*] %OWASP-CR-APIUsage: PASSWORD_HASHERS should list PBKDF2 or Bcrypt first!'
 
   def scan(self):

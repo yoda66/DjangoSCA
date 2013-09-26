@@ -42,12 +42,11 @@
 ############################################
 
 # source code import module checks
-"import","pickle","%OWASP-CR-APIUsage: import pickle"
-"import","cPickle","%OWASP-CR-APIUsage: import cPickle"
-#"import","mark_safe","%OWASP-CR-APIUsage: import mark_safe"
-
-#"from_import","subprocess","(call|check)","%OWASP-CR-ResourceUsage: from subprocess import call|check"
-#"from_import","os","system","%OWASP-CR-ResourceUsage: from os import system"
+"import","^import pickle","%OWASP-CR-APIUsage: import pickle"
+"import","^import cPickle","%OWASP-CR-APIUsage: import cPickle"
+"import","^from django.utils.safestring import mark_safe","%OWASP-CR-APIUsage: from django.utils.safestring import mark_safe"
+"import","^from subprocess import (call|check)","%OWASP-CR-ResourceUsage: from subprocess import call|check"
+"import","^from os import system","%OWASP-CR-ResourceUsage: from os import system"
 
 # source code string variable checks
 "string",".*(SELECT|select).+(FROM|from).+(WHERE|where).*","%OWASP-CR-APIUsage: SQL SELECT query found"
