@@ -20,7 +20,6 @@ class MyParser(ast.NodeVisitor):
 
     # dictionaries for rules checking
     self.b_imports = {}
-    self.b_from_imports = {}
     self.b_strings = {}
     self.b_general = {}
     self.b_template = {}
@@ -85,8 +84,6 @@ class MyParser(ast.NodeVisitor):
       if len(row) == 0 or re.match(r'^#.+',row[0]): continue
       if row[0] == 'import':
         self.b_imports[row[1]] = row[2]
-      #elif row[0] == 'from_import':
-      #  self.b_from_imports[row[1]] = (row[2], row[3])
       elif row[0] == 'string':
         self.b_strings[row[1]] = row[2]
       elif row[0] == 'general':
