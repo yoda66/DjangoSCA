@@ -64,7 +64,7 @@ class MyParser(ast.NodeVisitor):
         clean_function_name = 'clean_'+function_name
         search_name = classname + ':' + clean_function_name
         if not search_name in self.classes:
-          warning = 'L%04d: %s: %%OWASP-CR-APIUsage: Django forms validation function [%s] does not exist for Class [%s] assignment [%s = %s]' % ( \
+          warning = 'L%04d: %s: %%OWASP-CR-SourceCodeDesign: Django forms validation function [%s] does not exist for Class [%s] assignment [%s = %s]' % ( \
 		lineno,
 		self.shortname,
 		clean_function_name,
