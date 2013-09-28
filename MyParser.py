@@ -31,7 +31,16 @@ class MyParser(ast.NodeVisitor):
 
 
   def ast_parse(self,shortname,code):
-    node = ast.parse(code)
+    try:
+      node = ast.parse(code)
+    except:
+      """
+      Need to put real exception error code in this part
+      """
+      warning = 'L____: %s: %%OWASP-CR-SourceCodeDesign: %s' % \
+	( shortname, 'ast parsing error' )
+      self.warnings.append(warning)
+      return
     self.shortname = shortname
     self.visit(node)
     self.__django_clean_validator_check()
@@ -45,7 +54,7 @@ class MyParser(ast.NodeVisitor):
     if self.__istemplate():
       try: self.__rxp_nonast_check(self.b_template,self.b_template_re)
       except: raise
-    elif re.match(r'.*/crossdomain\.xml',shortname):
+    elif re.match(r'.*crossdomain\.xml',shortname):
       try: self.__crossdomain_xml(projdir+'/'+shortname)
       except: raise
 
