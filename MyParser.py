@@ -201,6 +201,9 @@ class MyParser(ast.NodeVisitor):
   def visit_ImportFrom(self,node):
     if self.debug: print 'visit_ImportFrom(): %s' % (node.names[0])
     modulename = node.module
+    codeline = 'import ' + modulename
+    try: self.__rxp_ast_check(codeline,node,self.b_imports,self.b_imports_re)
+    except: pass
     for alias in node.names:
       codeline = 'from %s import %s' % (modulename,getattr(alias,'name'))
       try: self.__rxp_ast_check(codeline,node,self.b_imports,self.b_imports_re)

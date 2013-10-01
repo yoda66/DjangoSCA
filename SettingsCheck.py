@@ -133,7 +133,7 @@ class SettingsCheck(object):
     for app in self.b_apps:
       try:
         if app not in getattr(settings,'INSTALLED_APPS'):
-          output += '  [-] %%OWASP-CR-BestPractice: Consider using installed app "%s" (%s)' \
+          output += '  [-] %%OWASP-CR-BestPractice: Consider using installed app "%s" (%s)\n' \
 		% (app,self.b_apps[app])
       except:
         output += '  [-] %%OWASP-CR-BestPractice: Recommended installed app [%s] is not configured.' % (app)
