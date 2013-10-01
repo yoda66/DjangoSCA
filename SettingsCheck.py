@@ -118,14 +118,14 @@ class SettingsCheck(object):
         output += '  [-] %OWASP-CR-BestPractice: '+m+'\n'
     if len(output)>0:
       self.filehandle.write('[*] %OWASP-CR-BestPractice: Custom MIDDLEWARE_CLASSES:\n')
-      self.filehandle.write(output[:-1])
+      self.filehandle.write(output)
     output = ''
     for ms in self.b_middleware:
       if ms not in middleware:
         output += '  [-] %OWASP-CR-BestPractice: consider using "'+ms+'"\n'
     if len(output)>0:
       self.filehandle.write('[*] %OWASP-CR-BestPractice: Recommended MIDDLEWARE_CLASSES:\n')
-      self.filehandle.write(output[:-1])
+      self.filehandle.write(output)
 
 
   def __recommended_apps(self):
@@ -136,11 +136,11 @@ class SettingsCheck(object):
           output += '  [-] %%OWASP-CR-BestPractice: Consider using installed app "%s" (%s)\n' \
 		% (app,self.b_apps[app])
       except:
-        output += '  [-] %%OWASP-CR-BestPractice: Recommended installed app [%s] is not configured.' % (app)
+        output += '  [-] %%OWASP-CR-BestPractice: Recommended installed app [%s] is not configured.\n' % (app)
         pass
     if len(output)>0:
       self.filehandle.write('[*] %OWASP-CR-BestPractice: Recommended INSTALLED_APPS:\n')
-      self.filehandle.write(output[:-1])
+      self.filehandle.write(output)
 
 
   def __password_hashers(self):
