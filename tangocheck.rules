@@ -1,16 +1,14 @@
-##
-##
-## TangoCheck Parser Configuration File
-## Author: Joff Thyer (c) 2013
-##
-##
+#################################################
+## TangoCheck Parser Configuration Rules File  ##
+## Author: Joff Thyer (c) 2013                 ##
+#################################################
 
-##########################################
-## The top section of this file is used ##
-## by the Settings.py class.            ##
-##########################################
+##----------------------------------------------------------------------+
+## Rules beginning with 'settings_' are used by the SettingCheck class
+##----------------------------------------------------------------------+
 
 # settings.py: Required Fields
+# if any of the variable fields below are missing, then print a warning
 "settings_req_field","ADMINS"
 "settings_req_field","ALLOWED_HOSTS"
 "settings_req_field","DEBUG"
@@ -21,23 +19,27 @@
 "settings_req_field","TEMPLATE_DEBUG"
 
 # settings.py: Recommended Variable Settings
+# if any of the variables below are not set to the recommended value,
+# then print a warning
 "settings_rec_var","DEBUG","False"
 "settings_rec_var","SESSION_COOKIE_SECURE","True"
 "settings_rec_var","SESSION_COOKIE_HTTP_ONLY","True"
 "settings_rec_var","TEMPLATE_DEBUG","False"
 
 # settings.py: Recommended Middleware
+# print a warning if the MIDDLEWARE_CLASSES variable does not include these
 "settings_rec_middleware","django.contrib.sessions.middleware.SessionMiddleware"
 "settings_rec_middleware","django.middleware.csrf.CsrfViewMiddleware"
 
 # settings.py: Recommended Installed Apps
+# display these as recommended if they are not include in the
+# INSTALLED_APPS variable
 "settings_rec_apps","django_bleach","https://github.com/jsocol/bleach"
 
 
-############################################
-## The lower section of this file is used ##
-## by the MyParser.py class.              ##
-############################################
+##----------------------------------------------------------------+
+## Rules below are being used by the MyParser.py class.    
+##----------------------------------------------------------------+
 
 # source code import module checks
 "import","^import Pickle","%OWASP-CR-APIUsage: import Pickle"
@@ -60,6 +62,6 @@
 "template",".+\|safe.+","%OWASP-CR-APIUsage: { |safe } variable"
 "template",".+autoescape\s{1,}off.+","%OWASP-CR-APIUsage: {% autoescape off %}"
 
-##
-## End of File
-##
+#################
+## End of File ##
+#################

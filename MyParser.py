@@ -7,9 +7,24 @@ import xml.etree.ElementTree as ET
 
 class MyParser(ast.NodeVisitor):
 
-  def __init__(self,rulesfile):
-    self.debug = True
+  """
+  This class extends the AST (Abstract Syntax Tree) python class
+  in order to parse through the content of any loaded file.  If the file that
+  is in need of parsing is not a python script, then this class also
+  implements a basic regular expression parser to accomodate.
+  All of the tangocheck based warnings will be append to a list named
+  self.warnings[], and can be printed with the print_warnings() method.
+  All of the methods that begin with the prefix "visit_" are callback
+  methods extending from AST.  As syntax is parsed, these methods will
+  be called depending on what part of the grammar is being parsed.
+  Methods prefixed with 'django_' are by convention intended to be
+  django logic checks.
+  """
 
+  def __init__(self,rulesfile,filehandle):
+    self.debug = False
+
+    self.filehandle = filehandle
     self.classes = []
     self.func_assign = []
     self.class_func_assign = {}
@@ -33,12 +48,9 @@ class MyParser(ast.NodeVisitor):
   def ast_parse(self,shortname,code):
     try:
       node = ast.parse(code)
-    except:
-      """
-      Need to put real exception error code in this part
-      """
-      warning = 'L____: %s: %%OWASP-CR-SourceCodeDesign: %s' % \
-	( shortname, 'ast parsing error' )
+    except (SyntaxError,NameError,ValueError,TypeError) as err:
+      warning = 'L____: %s: %%OWASP-CR-SourceCodeDesign: AST parsing: %s' % \
+	( shortname, err )
       self.warnings.append(warning)
       return
     self.shortname = shortname
@@ -61,7 +73,7 @@ class MyParser(ast.NodeVisitor):
 
   def print_warnings(self):
     for w in self.warnings:
-      print '%s' % (w)
+      self.filehandle.write('%s\n' % (w))
 
 
   def __django_clean_validator_check(self):
@@ -87,7 +99,7 @@ class MyParser(ast.NodeVisitor):
     try:
       f = open(rulesfile, 'r')
     except:
-      print '__load_rules(): failed to open rules file'
+      sys.stderr.write('__load_rules(): failed to open rules file')
       raise
     for row in csv.reader(f,delimiter=',',quotechar='"'):
       if len(row) == 0 or re.match(r'^#.+',row[0]): continue
@@ -114,7 +126,7 @@ class MyParser(ast.NodeVisitor):
     try:
       re_dict = [re.compile(r) for r in rule_dict]
     except re.error as e:
-      print '__load_rules(): regex compiled failed for [%s] [%s]' % (r,e)
+      sys.stderr.write('__load_rules(): regex compiled failed for [%s] [%s]' % (r,e))
       raise
     return re_dict
 
@@ -148,7 +160,7 @@ class MyParser(ast.NodeVisitor):
             self.warnings.append('L%04d: %s: %s' % \
 		(-99,self.shortname,sset[v]))
       except:
-        print 'rxp_ast_check(): %s' % (re.error)
+        sys.stderr.write('rxp_ast_check(): %s' % (re.error))
         raise
 
 
@@ -178,7 +190,7 @@ class MyParser(ast.NodeVisitor):
 
 
   def visit_Import(self,node):
-    #if self.debug: print 'visit_Import(): %s (%d)' % (node.names[0].name,node.lineno)
+    if self.debug: print 'visit_Import(): %s (%d)' % (node.names[0].name,node.lineno)
     for alias in node.names:
       codeline = 'import '+getattr(alias,'name')
       try: self.__rxp_ast_check(codeline,node,self.b_imports,self.b_imports_re)
@@ -187,7 +199,7 @@ class MyParser(ast.NodeVisitor):
 
 
   def visit_ImportFrom(self,node):
-    #if self.debug: print 'visit_ImportFrom(): %s' % (node.names[0])
+    if self.debug: print 'visit_ImportFrom(): %s' % (node.names[0])
     modulename = node.module
     for alias in node.names:
       codeline = 'from %s import %s' % (modulename,getattr(alias,'name'))
@@ -218,6 +230,11 @@ class MyParser(ast.NodeVisitor):
 
 
   def __process_func_assign(self,node):
+    """
+    This method will parse a func/method assignment within
+    a class or method within a class.  It will return a list
+    of assignments in the form:  target = func.SubMethod.SubSubMethod
+    """
     retlist = []
     for statement in node.body:
       if not self.rxpobj.match(str(statement)).group(1) == '_ast.Assign':
@@ -234,6 +251,12 @@ class MyParser(ast.NodeVisitor):
     return retlist
 
   def __process_id(self,node):
+    """
+    This method recursively descends down the function
+    call attributes  of the left hand side of a Python expression,
+    and returns related string attributes in any AST node of
+    type 'Name'.
+    """
     m = self.rxpobj.match(str(node))
     retval = ''
     if m.group(1) == '_ast.Name':
@@ -243,6 +266,12 @@ class MyParser(ast.NodeVisitor):
     return retval
 
   def __process_attr(self,node):
+    """
+    This method recursively descends down the function call
+    attributes of the right hand side of a Python expression,
+    and returns related string attributes in any
+    AST node of type 'Name'.
+    """
     m = self.rxpobj.match(str(node.value))
     retval = ''
     if m.group(1) == '_ast.Name':
@@ -252,11 +281,10 @@ class MyParser(ast.NodeVisitor):
     return retval
 
   def visit_Str(self,node):
-    #if self.debug: print 'visit_Str(): %s' % (str(node.s))
+    if self.debug: print 'visit_Str(): %s' % (str(node.s))
     try: self.__rxp_ast_check(str(getattr(node,'s')),node,self.b_strings,self.b_strings_re)
     except: pass
     self.generic_visit(node)
-
 
   def visit_Name(self,node):
     m = self.rxpobj.match(str(getattr(node,'ctx')))
