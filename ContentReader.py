@@ -5,6 +5,13 @@ import os
 
 class ContentReader(object):
 
+  """
+  This class is designed to read in file content, and save it to
+  a variable named "self.content".  The original project name file
+  path will be kept as well as a derived relative shortname path.
+  Other classes needing file content will use this as a base class.
+  """
+
   def __init__(self,projdir,name):
     self.name = name
     self.projdir = projdir

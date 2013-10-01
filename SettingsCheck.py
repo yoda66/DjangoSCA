@@ -10,19 +10,40 @@ from django.conf import settings
 
 class SettingsCheck(object):
 
-  def __init__(self,name,rules):
+  """
+  This class uses the django.conf module to parse the django settings.py
+  file in the same way that django itself does.  This way we can populate
+  the django settings class, and then perform our specific checks
+  using that class.   In order to properly parse the settings.py file
+  without any modifications, we first make a temporary directory and
+  copy the settings.py file to that temporary directory.
+  Then we append the path to sus.path, and set the DJANGO_SETTINGS_MODULE
+  environment variable to the string 'settings' to read the copied file.
+  Local class rule base checks performed include:
+  - recommended variables
+  - recommended middleware
+  - recommended apps
+  - required fields
+  - password hashing order
+  """
+  def __init__(self,name,rules,filehandle):
     self.name = name
+    self.filehandle = filehandle
     os.environ['DJANGO_SETTINGS_MODULE'] = 'settings'
 
+    # if we don't find the file, then just fail with a simple error
     if not os.path.isfile(name):
-      print '[*] Cannot find a Django settings file [%s]' % (name)
+      self.filehandle.write('[*] Cannot find a Django settings file [%s]\n' % (name))
       return
 
+    # mkdir temp directory and append to sys.path
     try:
       self.tempdir = tempfile.mkdtemp()
       sys.path.append(self.tempdir)
     except:
       raise
+
+    # copy settings.py file to temp dir
     try:
       shutil.copy(self.name,self.tempdir)
     except:
@@ -32,10 +53,14 @@ class SettingsCheck(object):
     self.b_fields = {}
     self.b_middleware = {}
     self.b_vars = {}
+
+    # load the rules file
     try:
       self.__load_rules(rules)
     except:
       raise
+
+    # start running the rules checks
     self.scan()
 
 
@@ -49,7 +74,7 @@ class SettingsCheck(object):
     try:
       f = open(rulesfile, 'r')
     except:
-      print '__load_rules(): failed to open rules file'
+      sys.stderr.write('__load_rules(): failed to open rules file')
       raise
     for row in csv.reader(f,delimiter=',',quotechar='"'):
       if len(row) == 0 or re.match(r'^#.+',row[0]): continue
@@ -67,9 +92,9 @@ class SettingsCheck(object):
     for field in self.b_fields:
       try:
         if not getattr(settings, field):
-          print '[*] %%OWASP-CR-APIUsage: Required field [%s] has no value set.' % (field)
+          self.filehandle.write('[*] %%OWASP-CR-BestPractice: Required field [%s] has no value set.\n' % (field))
       except:
-        print '[*] %%OWASP-CR-APIUsage: Required field [%s] does not exist.' % (field)
+        self.filehandle.write('[*] %%OWASP-CR-BestPractice: Required field [%s] does not exist.\n' % (field))
         pass
 
 
@@ -78,9 +103,9 @@ class SettingsCheck(object):
       try:
         value = getattr(settings,v)
         if value != self.b_vars[v]:
-          print '[*] %%OWASP-CR-APIUsage: Incorrect recommended variable setting [%s = %s]' % (v,value)
+          self.filehandle.write('[*] %%OWASP-CR-BestPractice: Incorrect recommended variable setting [%s = %s]\n' % (v,value))
       except:
-        print '[*] %%OWASP-CR-APIUsage: Recommended variable [%s] does not exist.' % (v)
+        self.filehandle.write('[*] %%OWASP-CR-BestPractice: Recommended variable [%s] does not exist.\n' % (v))
         pass
 
 
@@ -90,17 +115,17 @@ class SettingsCheck(object):
     for m in settings.MIDDLEWARE_CLASSES:
       middleware.append(m)
       if not m.startswith('django'):
-        output += '  [-] %OWASP-CR-APIUsage: '+m+'\n'
+        output += '  [-] %OWASP-CR-BestPractice: '+m+'\n'
     if len(output)>0:
-      print '[*] %OWASP-CR-APIUsage: Custom MIDDLEWARE_CLASSES:'
-      print output,
+      self.filehandle.write('[*] %OWASP-CR-BestPractice: Custom MIDDLEWARE_CLASSES:\n')
+      self.filehandle.write(output[:-1])
     output = ''
     for ms in self.b_middleware:
       if ms not in middleware:
-        output += '  [-] %OWASP-CR-APIUsage: consider using "'+ms+'"\n'
+        output += '  [-] %OWASP-CR-BestPractice: consider using "'+ms+'"\n'
     if len(output)>0:
-      print '[*] %OWASP-CR-APIUsage: Recommended MIDDLEWARE_CLASSES:'
-      print output,
+      self.filehandle.write('[*] %OWASP-CR-BestPractice: Recommended MIDDLEWARE_CLASSES:\n')
+      self.filehandle.write(output[:-1])
 
 
   def __recommended_apps(self):
@@ -108,20 +133,21 @@ class SettingsCheck(object):
     for app in self.b_apps:
       try:
         if app not in getattr(settings,'INSTALLED_APPS'):
-          output += '  [-] %%OWASP-CR-APIUsage: Consider using installed app "%s" (%s)\n' \
+          output += '  [-] %%OWASP-CR-BestPractice: Consider using installed app "%s" (%s)\n' \
 		% (app,self.b_apps[app])
       except:
-        output += '  [-] %%OWASP-CR-APIUsage: Recommended installed app [%s] is not configured.' % (app)
+        output += '  [-] %%OWASP-CR-BestPractice: Recommended installed app [%s] is not configured.' % (app)
         pass
     if len(output)>0:
-      print '[*] %OWASP-CR-APIUsage: Recommended INSTALLED_APPS:'
-      print output,
+      self.filehandle.write('[*] %OWASP-CR-BestPractice: Recommended INSTALLED_APPS:\n')
+      self.filehandle.write(output[:-1])
 
 
   def __password_hashers(self):
     ph = getattr(settings,'PASSWORD_HASHERS')
     if not re.match(r'.+\.(PBKDF2|Bcrypt).+',ph[0]):
-      print '[*] %OWASP-CR-APIUsage: PASSWORD_HASHERS should list PBKDF2 or Bcrypt first!'
+      self.filehandle.write('[*] %OWASP-CR-BestPractice: PASSWORD_HASHERS should list PBKDF2 or Bcrypt first!\n')
+
 
   def scan(self):
     self.__required_fields()
