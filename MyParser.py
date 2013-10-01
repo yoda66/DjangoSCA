@@ -74,7 +74,7 @@ class MyParser(ast.NodeVisitor):
   def print_warnings(self):
     for w in self.warnings:
       self.filehandle.write('%s\n' % (w))
-
+    return len(self.warnings) 
 
   def __django_clean_validator_check(self):
     for l in self.class_func_assign:

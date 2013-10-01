@@ -26,7 +26,6 @@ class DjangoFileCheck(ContentReader):
       raise
     self.rulesfile = rulesfile
     self.filehandle = filehandle
-    self.parseme()
 
 
   def parseme(self):
@@ -37,11 +36,11 @@ class DjangoFileCheck(ContentReader):
     if re.match(r'.+\.py$',self.shortname):
       parser.ast_parse(self.shortname,self.content)
     parser.nonast_parse(self.projdir,self.shortname,self.content)
-    parser.print_warnings()
+    return parser.print_warnings()
 
 
 
-def spin_thing(i,outFH):
+def spin_thing(outFH,i):
   # prime number controls speed of spinny thing
   prime = 23
   mystr = '/-\\|'
@@ -50,6 +49,18 @@ def spin_thing(i,outFH):
 	(mystr[i%len(mystr):i%len(mystr)+1]))
     sys.stdout.flush()
   return i+1
+
+
+def show_summary(outFH,fext,fwarn):
+  out = '\n\r[*] Stage 2: File Analysis Summary\n'
+  for k in sorted(fext.iterkeys()):
+    out += '  [-] Extension [.%-4s]: %6d files, %4d warnings\n' % (k,fext[k],fwarn[k])
+  out += '  ** Note: only recognized template files with extension html or txt are analyzed.\n'
+  out += '           only crossdomain.xml named files are analyzed.  All python is analyzed.\n'
+  if outFH != sys.stdout:
+    outFH.write(out)
+  sys.stdout.write(out)
+
 
 
 # parse arguments
@@ -112,14 +123,27 @@ if outFH != sys.stdout:
   sys.stdout.write('[*] Processing Stage 2: Full project directory recursion: [ ]\x08\x08')
   sys.stdout.flush()
 
-i = 0
+spincount = 0
+rxp = re.compile(r'^[a-zA-Z0-9]+.+\.(py|html|txt|xml)$')
+file_ext = {}
+file_ext_warnings = {}
 for root, dirs, files in os.walk(args.projdir):
   for f in files:
+
     fullpath = root + '/' + f
-    if re.match(r'^[a-zA-Z0-9]+.+\.(py|html|txt)|crossdomain\.xml$',f):
-      i = spin_thing(i,outFH)
+    m = rxp.match(f)
+    if m:
+      spincount = spin_thing(outFH,spincount)
+      if m.group(1) not in file_ext:
+        file_ext[m.group(1)] = 0
+        file_ext_warnings[m.group(1)] = 0
+      file_ext[m.group(1)] += 1
       try:
-        DjangoFileCheck(args.projdir,fullpath,args.rules,outFH)
+        dfc = DjangoFileCheck(args.projdir,fullpath,args.rules,outFH)
+        file_ext_warnings[m.group(1)] += dfc.parseme()
       except:
         raise
+
+show_summary(outFH,file_ext,file_ext_warnings)
 if outFH != sys.stdout: print '\r\n[*] Test Complete'
+
