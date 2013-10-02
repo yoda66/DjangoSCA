@@ -62,18 +62,29 @@ def show_summary(outFH,fext,fwarn):
   sys.stdout.write(out)
 
 
+# program description
+desc="""\
+TangoCheck is a static security code analysis tool for Django project analysis.
+It performs sanity checks on the standard 'settings.py' file with recommendations
+for improving security, and also performs a recursive directory search analysis
+across all of the source code of a project.  Python files are parsed using the native
+python abstract syntax tree (AST) class.  All file extensions specified are also
+analyze using regular expression checks.  Where possible, Django context specific
+analysis is performed within the model, view, template (MVT) paradigm."""
 
 # parse arguments
-ap = argparse.ArgumentParser(description='Author: Joff Thyer (c) 2013')
-ap.add_argument('projdir',\
+ap = argparse.ArgumentParser(\
+	usage="""tangocheck -r <RULES FILE> -o <OUTPUT FILE> <Django Project Dir>
+Author: Joff Thyer, (c) 2013""",description=desc)
+ap.add_argument('DjangoProjectDir',\
 	help='Django Project Directory')
 ap.add_argument('-r','--rules',default='tangocheck.rules',\
-	help='TangoCheck Rules File')
+	help='TangoCheck Rules File (default is "tangocheck.rules")')
 ap.add_argument('-o','--output',\
-	help='Results Output Text File')
+	help='Output Text File (default output to screen)')
 args = ap.parse_args()
 
-if not os.path.isdir(args.projdir):
+if not os.path.isdir(args.DjangoProjectDir):
   sys.stderr.write('project directory does not exist or is not a directory')
   sys.exit(1)
 
@@ -100,13 +111,13 @@ outFH.write("""
 [*] STAGE 1: Project Settings Tests 
 [*]---------------------------------
 
-""" % (args.projdir,datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
+""" % (args.DjangoProjectDir,datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
 try:
   if outFH != sys.stdout:
     print """[*] TangoCheck Version 1.0
 [*] Author: Joff Thyer, (c) 2013
 [*] Processing Stage 1: [settings.py]"""
-  SettingsCheck(args.projdir+'/settings.py',args.rules,outFH)
+  SettingsCheck(args.DjangoProjectDir+'/settings.py',args.rules,outFH)
 except:
   raise
 
