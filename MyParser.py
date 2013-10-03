@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import re
+import sys
 import ast
 import csv
 import xml.etree.ElementTree as ET
@@ -25,12 +26,11 @@ class MyParser(ast.NodeVisitor):
     self.debug = False
 
     self.filehandle = filehandle
+    self.imports = []
     self.classes = []
     self.func_assign = []
     self.class_func_assign = {}
     self.warnings = []
-    self.obj_load = {}
-    self.obj_store = {}
     self.rxpobj = re.compile(r'<(.+) object at (.+)>')
 
     # dictionaries for rules checking
@@ -55,7 +55,7 @@ class MyParser(ast.NodeVisitor):
       return
     self.shortname = shortname
     self.visit(node)
-    self.__django_clean_validator_check()
+    self.__django_logic_checks()
 
 
   def nonast_parse(self,projdir,shortname,code):
@@ -76,8 +76,15 @@ class MyParser(ast.NodeVisitor):
       self.filehandle.write('%s\n' % (w))
     return len(self.warnings) 
 
-  def __django_clean_validator_check(self):
+
+  def __django_logic_checks(self):
     for l in self.class_func_assign:
+
+      """
+      If there is no corresponding clean_ function for a Django
+      forms.Charfield(), then we might have input validation
+      issues.
+      """
       if re.match(r'^forms\.CharField',self.class_func_assign[l]):
         classname = l.split(':')[0]
         function_name = l.split(':')[1]
@@ -93,6 +100,30 @@ class MyParser(ast.NodeVisitor):
 		function_name,
 		self.class_func_assign[l])
           self.warnings.append(warning)
+
+
+      elif re.match(r'^Meta:fields',l) \
+		and self.class_func_assign[l] == '__all__' \
+		and self.__search_imports('ModelForm'):
+        name = l.split(':')[1]
+        lineno = int(l.split(':')[2])
+        warning = 'L%04d: %s: %%OWASP-CR-SourceCodeDesign: Django ModelForm; unsafe Meta class setting with assignment [%s = %s]' % ( lineno, self.shortname, name, self.class_func_assign[l] )
+        self.warnings.append(warning)
+
+
+      elif re.match(r'^Meta:exclude',l) \
+		and self.__search_imports('ModelForm'):
+        name = l.split(':')[1]
+        lineno = int(l.split(':')[2])
+        warning = 'L%04d: %s: %%OWASP-CR-SourceCodeDesign: Django ModelForm; selective Meta class field exclusion is not recommended [%s = %s]' % ( lineno, self.shortname, name, self.class_func_assign[l] )
+        self.warnings.append(warning)
+
+
+  def __search_imports(self,name):
+    rxp = re.compile('^(import|from).+%s' % name)
+    for line in self.imports:
+      if rxp.match(line): return True
+    return False
 
 
   def __load_rules(self,rulesfile):
@@ -193,6 +224,7 @@ class MyParser(ast.NodeVisitor):
     if self.debug: print 'visit_Import(): %s (%d)' % (node.names[0].name,node.lineno)
     for alias in node.names:
       codeline = 'import '+getattr(alias,'name')
+      self.imports.append(codeline)
       try: self.__rxp_ast_check(codeline,node,self.b_imports,self.b_imports_re)
       except: pass
     self.generic_visit(node)
@@ -202,10 +234,12 @@ class MyParser(ast.NodeVisitor):
     if self.debug: print 'visit_ImportFrom(): %s' % (node.names[0])
     modulename = str(node.module)
     codeline = 'import ' + modulename
+    self.imports.append(codeline)
     try: self.__rxp_ast_check(codeline,node,self.b_imports,self.b_imports_re)
     except: pass
     for alias in node.names:
       codeline = 'from %s import %s' % (modulename,getattr(alias,'name'))
+      self.imports.append(codeline)
       try: self.__rxp_ast_check(codeline,node,self.b_imports,self.b_imports_re)
       except: pass
     self.generic_visit(node)
@@ -213,22 +247,32 @@ class MyParser(ast.NodeVisitor):
 
   def visit_ClassDef(self,node):
     self.classes.append(node.name)
-    for statement in node.body:
-      if self.rxpobj.match(str(statement)).group(1) == '_ast.FunctionDef':
-        self.classes.append(node.name+':'+statement.name)
-        try: clfunctions = self.__process_func_assign(node)
+    for statement in ast.iter_child_nodes(node):
+
+      """
+      Lets store either Classdef:FuncName() or Classdef:Classdef for later
+      reference if we need it.
+      """
+      if self.rxpobj.match(str(statement)).group(1) == '_ast.FunctionDef' or \
+		self.rxpobj.match(str(statement)).group(1) == '_ast.ClassDef':
+        myname = node.name+':'+statement.name
+        if myname not in self.classes:
+          self.classes.append(node.name+':'+statement.name)
+
+      """
+      if we are doing a function definition or a variable
+      assignment, we are interested in the LHS, and RHS
+      of the code statement
+      """
+      if self.rxpobj.match(str(statement)).group(1) == '_ast.FunctionDef' or \
+		self.rxpobj.match(str(statement)).group(1) == '_ast.Assign':
+
+        try: clfunctions = self.__process_func_assign(node.body)
         except: clfunctions = []
         for varassign in clfunctions:
           key = node.name + ':' + varassign[0]
           self.class_func_assign[key] = varassign[1]
-    self.generic_visit(node)
 
-
-  def visit_FunctionDef(self,node):
-    try: functions = self.__process_func_assign(node)
-    except: functions = []
-    for varassign in functions:
-      self.func_assign.append('%s:%s' % (node.name,varassign))
     self.generic_visit(node)
 
 
@@ -239,11 +283,12 @@ class MyParser(ast.NodeVisitor):
     of assignments in the form:  target = func.SubMethod.SubSubMethod
     """
     retlist = []
-    for statement in node.body:
+    for statement in node:
       if not self.rxpobj.match(str(statement)).group(1) == '_ast.Assign':
         continue
       for target in statement.targets:
         targetname = getattr(target,'id') + ':' + str(target.lineno)
+
         if self.rxpobj.match(str(statement.value)).group(1) == '_ast.Call':
           try: rhs_func = getattr(getattr(statement.value,'func'),'value')
           except: raise
@@ -251,7 +296,23 @@ class MyParser(ast.NodeVisitor):
           attr = self.__process_attr(getattr(statement.value,'func'))
           rhs = '%s.%s()' % (rhs_funcname,attr)
           retlist.append([targetname,rhs])
+
+        elif self.rxpobj.match(str(statement.value)).group(1) == '_ast.Name':
+          retlist.append([targetname,statement.value.id])
+
+        elif self.rxpobj.match(str(statement.value)).group(1) == '_ast.List':
+          mlist = '['
+          for cn in ast.iter_child_nodes(statement.value):
+            if self.rxpobj.match(str(cn)).group(1) == '_ast.Str':
+              mlist += '\'%s\',' % (cn.s)
+          mlist = mlist[:-1] + ']'
+          retlist.append([targetname,mlist])
+
+        elif self.rxpobj.match(str(statement.value)).group(1) == '_ast.Str':
+          retlist.append([targetname,statement.value.s])
+
     return retlist
+
 
   def __process_id(self,node):
     """
@@ -267,6 +328,7 @@ class MyParser(ast.NodeVisitor):
     elif m.group(1) == '_ast.Attribute':
       retval += self.__process_id(node.value)
     return retval
+
 
   def __process_attr(self,node):
     """
@@ -289,12 +351,4 @@ class MyParser(ast.NodeVisitor):
     except: pass
     self.generic_visit(node)
 
-  def visit_Name(self,node):
-    m = self.rxpobj.match(str(getattr(node,'ctx')))
-    val = str(getattr(node,'id'))
-    if m.group(1) == '_ast.Store':
-      self.obj_store[val] = m.group(2)
-    elif m.group(1) == '_ast.Load':
-      self.obj_load[val] = m.group(2)
-    self.generic_visit(node)
 
