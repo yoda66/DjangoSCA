@@ -52,11 +52,13 @@ def spin_thing(outFH,i):
 
 
 def show_summary(outFH,fext,fwarn):
-  out = '\n\r[*] Stage 2: File Analysis Summary\n'
+  out = '\n[*] Stage 2: File Analysis Summary\n'
   for k in sorted(fext.iterkeys()):
-    out += '  [-] Extension [.%-4s]: %6d files, %4d warnings\n' % (k,fext[k],fwarn[k])
-  out += '  ** Note: only recognized template files with extension html or txt are analyzed.\n'
-  out += '           only crossdomain.xml named files are analyzed.  All python is analyzed.\n'
+    out += '    [-] Extension [.%-4s]: %6d files, %4d warnings\n' % (k,fext[k],fwarn[k])
+  out += """\
+        [+] template files are identified by regular expression match.
+        [+] many xml files may exist, but only crossdomain.xml is analyzed.
+        [+] all python scripts will be analyzed."""
   if outFH != sys.stdout:
     outFH.write(out)
   sys.stdout.write(out)
@@ -138,7 +140,7 @@ spincount = 0
 rxp = re.compile(r'^[a-zA-Z0-9]+.+\.(py|html|txt|xml)$')
 file_ext = {}
 file_ext_warnings = {}
-for root, dirs, files in os.walk(args.projdir):
+for root, dirs, files in os.walk(args.DjangoProjectDir):
   for f in files:
 
     fullpath = root + '/' + f
@@ -150,11 +152,11 @@ for root, dirs, files in os.walk(args.projdir):
         file_ext_warnings[m.group(1)] = 0
       file_ext[m.group(1)] += 1
       try:
-        dfc = DjangoFileCheck(args.projdir,fullpath,args.rules,outFH)
+        dfc = DjangoFileCheck(args.DjangoProjectDir,fullpath,args.rules,outFH)
         file_ext_warnings[m.group(1)] += dfc.parseme()
       except:
         raise
 
 show_summary(outFH,file_ext,file_ext_warnings)
-if outFH != sys.stdout: print '\r\n[*] Test Complete'
+print '\n[*] Test Complete'
 
