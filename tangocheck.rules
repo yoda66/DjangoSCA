@@ -61,7 +61,8 @@
 "general",".*os\.system\(.+\).*","%OWASP-CR-ResourceUsage: os.system() function call. Possible command injection."
 "general",".*random\.random\(\).*","%OWASP-CR-ResourceUsage: random.random() function call. Possibility of command injection."
 "general",".*subprocess\.(call|check).*","%OWASP-CR-ResourceUsage: subprocess.call()|check() function call"
-"general",".*extra\(.*\).*","%OWASP-CR-ResourceUsage: extra() function call. Check the 'where' parameter for raw SQL."
+"general",".*extra\(.+\).*","%OWASP-CR-ResourceUsage: extra() function call. Check the 'where' parameter for raw SQL."
+"general",".*raw\(.(SELECT|select|INSERT|insert|DELETE|delete|UPDATE|update).+(WHERE|where|VALUES|values).+\).*","%OWASP-CR-InputValidation: raw() function call with SQL statement.  Possibility of SQL injection."
 
 # template file regular expression searches
 "template",".+\|safe.+","%OWASP-CR-APIUsage: { |safe } variable"
