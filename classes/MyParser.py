@@ -13,7 +13,7 @@ class MyParser(ast.NodeVisitor):
   in order to parse through the content of any loaded file.  If the file that
   is in need of parsing is not a python script, then this class also
   implements a basic regular expression parser to accomodate.
-  All of the tangocheck based warnings will be append to a list named
+  All of the DjangoSCA based warnings will be appended to a list named
   self.warnings[], and can be printed with the print_warnings() method.
   All of the methods that begin with the prefix "visit_" are callback
   methods extending from AST.  As syntax is parsed, these methods will
