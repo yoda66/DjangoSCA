@@ -3,9 +3,9 @@
 import sys, os, re
 import datetime
 import argparse
-from ContentReader import ContentReader
-from SettingsCheck import SettingsCheck
-from MyParser import MyParser
+from classes.ContentReader import ContentReader
+from classes.SettingsCheck import SettingsCheck
+from classes.MyParser import MyParser
 
 
 class DjangoFileCheck(ContentReader):
@@ -64,9 +64,16 @@ def show_summary(outFH,fext,fwarn):
   sys.stdout.write(out)
 
 
-# program description
-desc="""\
-TangoCheck is a static security code analysis tool for Django project analysis.
+
+# start of main code
+if __name__ == "__main__":
+
+    TITLE   = 'DjangoSCA'
+    VERSION = '1.2'
+
+    # program description
+    desc="""\
+DjangoSCA is a static security code analysis tool for Django project analysis.
 It performs sanity checks on the standard 'settings.py' file with recommendations
 for improving security, and also performs a recursive directory search analysis
 across all of the source code of a project.  Python files are parsed using the native
@@ -74,36 +81,33 @@ python abstract syntax tree (AST) class.  All file extensions specified are also
 analyze using regular expression checks.  Where possible, Django context specific
 analysis is performed within the model, view, template (MVT) paradigm."""
 
-# parse arguments
-ap = argparse.ArgumentParser(\
-	usage="""tangocheck -r <RULES FILE> -o <OUTPUT FILE> <Django Project Dir>
+    # parse arguments
+    ap = argparse.ArgumentParser(\
+	usage="""djangoSCA.py -r <RULES FILE> -o <OUTPUT FILE> <Django Project Dir>
 Author: Joff Thyer, (c) 2013""",description=desc)
-ap.add_argument('DjangoProjectDir',\
-	help='Django Project Directory')
-ap.add_argument('-r','--rules',default='tangocheck.rules',\
-	help='TangoCheck Rules File (default is "tangocheck.rules")')
-ap.add_argument('-o','--output',\
-	help='Output Text File (default output to screen)')
-args = ap.parse_args()
+    ap.add_argument('DjangoProjectDir',help='Django Project Directory')
+    ap.add_argument('-r','--rules',default='djangoSCA.rules',help='DjangoSCA Rules File (default is "djangoSCA.rules")')
+    ap.add_argument('-o','--output',help='Output Text File (default output to screen)')
+    args = ap.parse_args()
 
-if not os.path.isdir(args.DjangoProjectDir):
-  sys.stderr.write('project directory does not exist or is not a directory')
-  sys.exit(1)
+    if not os.path.isdir(args.DjangoProjectDir):
+        sys.stderr.write('project directory does not exist or is not a directory')
+        sys.exit(1)
 
-if args.output:
-  try:
-    outFH = open(args.output,'w')
-  except:
-    sys.stderr.write('failed to open output file')
-    sys.exit(1)
-else:
-  outFH = sys.stdout
+    if args.output:
+       try:
+           outFH = open(args.output,'w')
+       except:
+           sys.stderr.write('failed to open output file')
+           sys.exit(1)
+    else:
+       outFH = sys.stdout
 
 
-outFH.write("""
+    outFH.write("""
 [*]___________________________________________________________
 [*]
-[*] TangoCheck Version 1.0
+[*] %s Version %s
 [*] Author: Joff Thyer (c) 2013
 [*] Project Dir/Name..: %s
 [*] Date of Test......: %s
@@ -113,17 +117,20 @@ outFH.write("""
 [*] STAGE 1: Project Settings Tests 
 [*]---------------------------------
 
-""" % (args.DjangoProjectDir,datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
-try:
-  if outFH != sys.stdout:
-    print """[*] TangoCheck Version 1.0
-[*] Author: Joff Thyer, (c) 2013
-[*] Processing Stage 1: [settings.py]"""
-  SettingsCheck(args.DjangoProjectDir+'/settings.py',args.rules,outFH)
-except:
-  raise
+""" % (TITLE, VERSION, args.DjangoProjectDir,
+	datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
 
-outFH.write("""
+    if outFH != sys.stdout:
+        print """[*] %s Version %s
+[*] Author: Joff Thyer, (c) 2013
+[*] Processing Stage 1: [settings.py]""" % (TITLE,VERSION)
+
+    try:
+        SettingsCheck(args.DjangoProjectDir+'/settings.py',args.rules,outFH)
+    except:
+        raise
+
+    outFH.write("""
 
 [*]---------------------------------------------
 [*] STAGE 2: Testing ALL directories and files
@@ -132,31 +139,32 @@ outFH.write("""
 
 """)
 
-if outFH != sys.stdout:
-  sys.stdout.write('[*] Processing Stage 2: Full project directory recursion: [ ]\x08\x08')
-  sys.stdout.flush()
+    if outFH != sys.stdout:
+        sys.stdout.write('[*] Processing Stage 2: Full project directory recursion: [ ]\x08\x08')
+        sys.stdout.flush()
 
-spincount = 0
-rxp = re.compile(r'^[a-zA-Z0-9]+.+\.(py|html|txt|xml)$')
-file_ext = {}
-file_ext_warnings = {}
-for root, dirs, files in os.walk(args.DjangoProjectDir):
-  for f in files:
 
-    fullpath = root + '/' + f
-    m = rxp.match(f)
-    if m:
-      spincount = spin_thing(outFH,spincount)
-      if m.group(1) not in file_ext:
-        file_ext[m.group(1)] = 0
-        file_ext_warnings[m.group(1)] = 0
-      file_ext[m.group(1)] += 1
-      try:
-        dfc = DjangoFileCheck(args.DjangoProjectDir,fullpath,args.rules,outFH)
-        file_ext_warnings[m.group(1)] += dfc.parseme()
-      except:
-        raise
+    spincount = 0
+    rxp = re.compile(r'^[a-zA-Z0-9]+.+\.(py|html|txt|xml)$')
+    file_ext = {}
+    file_ext_warnings = {}
 
-show_summary(outFH,file_ext,file_ext_warnings)
-print '\n[*] Test Complete'
+    for root, dirs, files in os.walk(args.DjangoProjectDir):
+        for f in files:
+            fullpath = root + '/' + f
+            m = rxp.match(f)
+            if not m: continue
+            spincount = spin_thing(outFH,spincount)
+            if m.group(1) not in file_ext:
+                file_ext[m.group(1)] = 0
+                file_ext_warnings[m.group(1)] = 0
+                file_ext[m.group(1)] += 1
+                try:
+                    dfc = DjangoFileCheck(args.DjangoProjectDir,fullpath,args.rules,outFH)
+                    file_ext_warnings[m.group(1)] += dfc.parseme()
+                except:
+                    raise
+
+    show_summary(outFH,file_ext,file_ext_warnings)
+    print '\n[*] Test Complete'
 
