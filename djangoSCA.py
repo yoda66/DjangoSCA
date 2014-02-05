@@ -83,7 +83,7 @@ analysis is performed within the model, view, template (MVT) paradigm."""
 
     # parse arguments
     ap = argparse.ArgumentParser(\
-	usage="""djangoSCA.py -r <RULES FILE> -o <OUTPUT FILE> <Django Project Dir>
+	usage="""djangoSCA.py -r <rules file> -o <output file> <Django Project Dir>
 Author: Joff Thyer, (c) 2013""",description=desc)
     ap.add_argument('DjangoProjectDir',help='Django Project Directory')
     ap.add_argument('-r','--rules',default='djangoSCA.rules',help='DjangoSCA Rules File (default is "djangoSCA.rules")')
