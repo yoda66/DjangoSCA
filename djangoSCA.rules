@@ -23,7 +23,7 @@
 # then print a warning
 "settings_rec_var","DEBUG","False"
 "settings_rec_var","SESSION_COOKIE_SECURE","True"
-"settings_rec_var","SESSION_COOKIE_HTTP_ONLY","True"
+"settings_rec_var","SESSION_COOKIE_HTTPONLY","True"
 "settings_rec_var","TEMPLATE_DEBUG","False"
 
 # settings.py: Recommended Middleware

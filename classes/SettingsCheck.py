@@ -144,7 +144,10 @@ class SettingsCheck(object):
 
 
   def __password_hashers(self):
-    ph = getattr(settings,'PASSWORD_HASHERS')
+    try:
+      ph = getattr(settings,'PASSWORD_HASHERS')
+    except:
+      return
     if not re.match(r'.+\.(PBKDF2|Bcrypt).+',ph[0]):
       self.filehandle.write('[*] %OWASP-CR-BestPractice: PASSWORD_HASHERS should list PBKDF2 or Bcrypt first!\n')
 

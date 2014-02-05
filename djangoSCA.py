@@ -154,17 +154,19 @@ Author: Joff Thyer, (c) 2013""",description=desc)
             fullpath = root + '/' + f
             m = rxp.match(f)
             if not m: continue
+
             spincount = spin_thing(outFH,spincount)
             if m.group(1) not in file_ext:
                 file_ext[m.group(1)] = 0
                 file_ext_warnings[m.group(1)] = 0
-                file_ext[m.group(1)] += 1
-                try:
-                    dfc = DjangoFileCheck(args.DjangoProjectDir,fullpath,args.rules,outFH)
-                    file_ext_warnings[m.group(1)] += dfc.parseme()
-                except:
-                    raise
+            file_ext[m.group(1)] += 1
+            try:
+                dfc = DjangoFileCheck(args.DjangoProjectDir,fullpath,args.rules,outFH)
+                file_ext_warnings[m.group(1)] += dfc.parseme()
+            except:
+                raise
 
     show_summary(outFH,file_ext,file_ext_warnings)
     print '\n[*] Test Complete'
+
 
