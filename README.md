@@ -1,3 +1,4 @@
+<b>DjangoSCA</b>
 
 DjangoSCA is a python based Django project source code security auditing system
 that makes use of the Django framework itself, the Python Abstract Syntax Tree
