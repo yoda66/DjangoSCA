@@ -79,7 +79,7 @@ for improving security, and also performs a recursive directory search analysis
 across all of the source code of a project.  Python files are parsed using the native
 python abstract syntax tree (AST) class.  All file extensions specified are also
 analyze using regular expression checks.  Where possible, Django context specific
-analysis is performed within the model, view, template (MVT) paradigm."""
+analysis is performed within the model, view, controller (MVC) paradigm."""
 
     # parse arguments
     ap = argparse.ArgumentParser(\
