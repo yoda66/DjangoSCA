@@ -91,7 +91,7 @@ class SettingsCheck(object):
   def __required_fields(self):
     for field in self.b_fields:
       try:
-        if not getattr(settings, field):
+        if not hasattr(settings, field):
           self.filehandle.write('[*] %%OWASP-CR-BestPractice: Required field [%s] has no value set.\n' % (field))
       except:
         self.filehandle.write('[*] %%OWASP-CR-BestPractice: Required field [%s] does not exist.\n' % (field))
@@ -102,7 +102,7 @@ class SettingsCheck(object):
     for v in self.b_vars:
       try:
         value = getattr(settings,v)
-        if value != self.b_vars[v]:
+        if str(value) != self.b_vars[v]:
           self.filehandle.write('[*] %%OWASP-CR-BestPractice: Incorrect recommended variable setting [%s = %s]\n' % (v,value))
       except:
         self.filehandle.write('[*] %%OWASP-CR-BestPractice: Recommended variable [%s] does not exist.\n' % (v))
