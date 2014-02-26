@@ -86,6 +86,7 @@ analysis is performed within the model, view, controller (MVC) paradigm."""
 	usage="""djangoSCA.py -r <rules file> -o <output file> <Django Project Dir>
 Author: Joff Thyer, (c) 2013""",description=desc)
     ap.add_argument('DjangoProjectDir',help='Django Project Directory')
+    ap.add_argument('-s','--settings',default='settings.py',help='Django settings.py ("settings.py" is the default)')
     ap.add_argument('-r','--rules',default='djangoSCA.rules',help='DjangoSCA Rules File (default is "djangoSCA.rules")')
     ap.add_argument('-o','--output',help='Output Text File (default output to screen)')
     args = ap.parse_args()
@@ -114,7 +115,7 @@ Author: Joff Thyer, (c) 2013""",description=desc)
 [*]___________________________________________________________
 
 [*]---------------------------------
-[*] STAGE 1: Project Settings Tests 
+[*] STAGE 1: Project Settings Tests
 [*]---------------------------------
 
 """ % (TITLE, VERSION, args.DjangoProjectDir,
@@ -126,7 +127,7 @@ Author: Joff Thyer, (c) 2013""",description=desc)
 [*] Processing Stage 1: [settings.py]""" % (TITLE,VERSION)
 
     try:
-        SettingsCheck(args.DjangoProjectDir+'/settings.py',args.rules,outFH)
+        SettingsCheck(args.DjangoProjectDir + '/' + args.settings,args.rules,outFH)
     except:
         raise
 
