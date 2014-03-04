@@ -83,8 +83,9 @@ analysis is performed within the model, view, controller (MVC) paradigm."""
 
     # parse arguments
     ap = argparse.ArgumentParser(\
-	usage="""djangoSCA.py -r <rules file> -o <output file> <Django Project Dir>
-Author: Joff Thyer, (c) 2013""",description=desc)
+	usage="""\
+djangoSCA.py -r <rules file> -o <output file> <Django Project Dir>
+Version %s, Author: Joff Thyer, (c) 2013""" % (VERSION),description=desc)
     ap.add_argument('DjangoProjectDir',help='Django Project Directory')
     ap.add_argument('-s','--settings',default='settings.py',help='Django settings.py ("settings.py" is the default)')
     ap.add_argument('-r','--rules',default='djangoSCA.rules',help='DjangoSCA Rules File (default is "djangoSCA.rules")')
