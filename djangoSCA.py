@@ -178,3 +178,7 @@ Version %s, Author: Joff Thyer, (c) 2013"""
 
     show_summary(outFH, file_ext, file_ext_warnings)
     print '\n[*] Test Complete'
+    if all(v == 0 for v in file_ext_warnings.values()):
+        sys.exit(0)
+    else:
+        sys.exit(1)
