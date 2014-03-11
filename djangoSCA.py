@@ -92,6 +92,8 @@ Version %s, Author: Joff Thyer, (c) 2013"""
     ap.add_argument('DjangoProjectDir', help='Django Project Directory')
     ap.add_argument('-s', '--settings', default='settings.py',
                     help='Django settings.py ("settings.py" is the default)')
+    ap.add_argument('-i', '--ignore', action='append',
+                    help='Ignore directories. eg, --ignore foo --ignore bar')
     ap.add_argument('-r', '--rules', default='djangoSCA.rules',
                     help='DjangoSCA Rules File (default is "djangoSCA.rules")')
     ap.add_argument('-o', '--output',
@@ -157,7 +159,10 @@ Version %s, Author: Joff Thyer, (c) 2013"""
     file_ext = {}
     file_ext_warnings = {}
 
-    for root, dirs, files in os.walk(args.DjangoProjectDir):
+    for root, dirs, files in os.walk(args.DjangoProjectDir, topdown=True):
+        if args.ignore:
+            exclude = set(args.ignore)
+            dirs[:] = [d for d in dirs if d not in exclude]
         for f in files:
             fullpath = root + '/' + f
             m = rxp.match(f)
