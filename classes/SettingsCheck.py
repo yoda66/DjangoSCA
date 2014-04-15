@@ -76,8 +76,8 @@ class SettingsCheck(object):
         try:
             f = open(rulesfile, 'r')
         except:
-            sys.stderr.write('__load_rules(): failed to open rules file')
-        raise
+            sys.stderr.write('__load_rules(): failed to open rules file\n')
+            raise
 
         for row in csv.reader(f, delimiter=',', quotechar='"'):
             if len(row) == 0 or re.match(r'^#.+', row[0]):
