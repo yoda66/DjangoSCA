@@ -128,6 +128,8 @@ class SettingsCheck(object):
                 self.filehandle.write(output)
         except ImproperlyConfigured as improper:
             self.filehandle.write('[*] Improper configuration error: %s\n' % (improper.message))
+        except Exception as e:
+            self.filehandle.write('[*] Exception of type %s found: %s\n' % (type(e).__name__, e.message))
 
         output = ''
         for ms in self.b_middleware:
