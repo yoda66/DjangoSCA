@@ -8,6 +8,7 @@ import re
 import csv
 try:
     from django.conf import settings
+    from django.core.exceptions import ImproperlyConfigured
 except:
     sys.stderr.write('django.conf module not found. You must install Django first. Exiting.\n')
     sys.exit(1)
@@ -117,13 +118,16 @@ class SettingsCheck(object):
     def __recommended_middleware(self):
         output = ''
         middleware = []
-        for m in settings.MIDDLEWARE_CLASSES:
-            middleware.append(m)
-            if not m.startswith('django'):
-                output += '  [-] %OWASP-CR-BestPractice: ' + m + '\n'
-        if len(output) > 0:
-            self.filehandle.write('[*] %OWASP-CR-BestPractice: Custom MIDDLEWARE_CLASSES:\n')
-            self.filehandle.write(output)
+        try:
+            for m in settings.MIDDLEWARE_CLASSES:
+                middleware.append(m)
+                if not m.startswith('django'):
+                    output += '  [-] %OWASP-CR-BestPractice: ' + m + '\n'
+            if len(output) > 0:
+                self.filehandle.write('[*] %OWASP-CR-BestPractice: Custom MIDDLEWARE_CLASSES:\n')
+                self.filehandle.write(output)
+        except ImproperlyConfigured as improper:
+            self.filehandle.write('[*] Improper configuration error: %s\n' % (improper.message))
 
         output = ''
         for ms in self.b_middleware:
