@@ -6,7 +6,11 @@ import os
 import sys
 import re
 import csv
-from django.conf import settings
+try:
+    from django.conf import settings
+except:
+    sys.stderr.write('django.conf module not found. You must install Django first. Exiting.\n')
+    sys.exit(1)
 
 
 class SettingsCheck(object):
