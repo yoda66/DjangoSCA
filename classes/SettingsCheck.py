@@ -10,7 +10,7 @@ try:
     from django.conf import settings
     from django.core.exceptions import ImproperlyConfigured
 except:
-    sys.stderr.write('django.conf module not found. You must install Django first. Exiting.\n')
+    sys.stderr.write('django.conf module not found. You must install Django, or enter an environment in which it is installed first. Exiting.\n')
     sys.exit(1)
 
 
