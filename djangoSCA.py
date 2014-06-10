@@ -65,6 +65,12 @@ def show_summary(outFH, fext, fwarn):
     sys.stdout.write(out)
 
 
+def get_settings_path(base_dir):
+    for root, dirs, files in os.walk(base_dir):
+        for f in files:
+            if f.endswith("settings.py"):
+                return os.path.dirname(os.path.join(root, f))
+
 # start of main code
 if __name__ == "__main__":
 
@@ -135,7 +141,7 @@ Version %s, Author: Joff Thyer, (c) 2013"""
 [*] Processing Stage 1: [settings.py]""" % (TITLE, VERSION)
 
     try:
-        SettingsCheck(args.DjangoProjectDir + '/'
+        SettingsCheck(get_settings_path(args.DjangoProjectDir) + "/"
                       + args.settings, args.rules, outFH)
     except:
         raise

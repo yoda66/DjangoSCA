@@ -6,7 +6,12 @@ import os
 import sys
 import re
 import csv
-from django.conf import settings
+try:
+    from django.conf import settings
+    from django.core.exceptions import ImproperlyConfigured
+except:
+    sys.stderr.write('django.conf module not found. You must install Django, or enter an environment in which it is installed first. Exiting.\n')
+    sys.exit(1)
 
 
 class SettingsCheck(object):
@@ -76,8 +81,8 @@ class SettingsCheck(object):
         try:
             f = open(rulesfile, 'r')
         except:
-            sys.stderr.write('__load_rules(): failed to open rules file')
-        raise
+            sys.stderr.write('__load_rules(): failed to open rules file\n')
+            raise
 
         for row in csv.reader(f, delimiter=',', quotechar='"'):
             if len(row) == 0 or re.match(r'^#.+', row[0]):
@@ -113,13 +118,18 @@ class SettingsCheck(object):
     def __recommended_middleware(self):
         output = ''
         middleware = []
-        for m in settings.MIDDLEWARE_CLASSES:
-            middleware.append(m)
-            if not m.startswith('django'):
-                output += '  [-] %OWASP-CR-BestPractice: ' + m + '\n'
-        if len(output) > 0:
-            self.filehandle.write('[*] %OWASP-CR-BestPractice: Custom MIDDLEWARE_CLASSES:\n')
-            self.filehandle.write(output)
+        try:
+            for m in settings.MIDDLEWARE_CLASSES:
+                middleware.append(m)
+                if not m.startswith('django'):
+                    output += '  [-] %OWASP-CR-BestPractice: ' + m + '\n'
+            if len(output) > 0:
+                self.filehandle.write('[*] %OWASP-CR-BestPractice: Custom MIDDLEWARE_CLASSES:\n')
+                self.filehandle.write(output)
+        except ImproperlyConfigured as improper:
+            self.filehandle.write('[*] Improper configuration error: %s\n' % (improper.message))
+        except Exception as e:
+            self.filehandle.write('[*] Exception of type %s found: %s\n' % (type(e).__name__, e.message))
 
         output = ''
         for ms in self.b_middleware:
