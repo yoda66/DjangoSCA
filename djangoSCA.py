@@ -75,7 +75,7 @@ def get_settings_path(base_dir):
 if __name__ == "__main__":
 
     TITLE = 'DjangoSCA'
-    VERSION = '1.2'
+    VERSION = '1.3'
 
     # program description
     desc = """\
