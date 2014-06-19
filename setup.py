@@ -4,7 +4,7 @@ from setuptools import setup, find_packages
 from os.path import join, dirname
 
 setup(name='DjangoSCA',
-   version='1.3d',
+   version='1.3e',
    description='Django Static Source Code Analyzer',
    long_description = open(join(dirname(__file__), 'README.md')).read(),
    author='Joff Thyer',
