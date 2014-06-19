@@ -5,9 +5,9 @@ import os
 import re
 import datetime
 import argparse
-from djangoSCA.ContentReader import ContentReader
-from djangoSCA.SettingsCheck import SettingsCheck
-from djangoSCA.MyParser import MyParser
+from djangoSCAclasses.ContentReader import ContentReader
+from djangoSCAclasses.SettingsCheck import SettingsCheck
+from djangoSCAclasses.MyParser import MyParser
 
 
 class DjangoFileCheck(ContentReader):
