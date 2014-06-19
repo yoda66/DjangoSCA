@@ -1,10 +1,10 @@
 #!/usr/bin/env python
 
-from distutils.core import setup
+from setuptools import setup, find_packages
 from os.path import join, dirname
 
 setup(name='DjangoSCA',
-   version='1.3c',
+   version='1.3d',
    description='Django Static Source Code Analyzer',
    long_description = open(join(dirname(__file__), 'README.md')).read(),
    author='Joff Thyer',
@@ -12,7 +12,7 @@ setup(name='DjangoSCA',
    license='GPLv3',
    url='https://bitbucket.org/jsthyer/djangosca',
    scripts = ['djangoSCA.py'],
-   packages = ['djangoSCAclasses'],
+   packages = find_packages(),
    data_files = [('/usr/local/etc',['djangoSCA.rules'])]
 )
 
