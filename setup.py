@@ -12,6 +12,7 @@ setup(name='DjangoSCA',
    url='https://bitbucket.org/jsthyer/djangosca',
    long_description = open(join(dirname(__file__), 'README.md')).read(),
    scripts = ['djangoSCA.py'],
-   packages = ['djangoSCAclasses']
+   packages = ['djangoSCAclasses'],
+   data_files = [('/usr/local/etc',['djangoSCA.rules'])]
 )
 

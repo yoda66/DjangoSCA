@@ -100,7 +100,7 @@ Version %s, Author: Joff Thyer, (c) 2013"""
                     help='Django settings.py ("settings.py" is the default)')
     ap.add_argument('-i', '--ignore', action='append',
                     help='Ignore directories. eg, --ignore foo --ignore bar')
-    ap.add_argument('-r', '--rules', default='djangoSCA.rules',
+    ap.add_argument('-r', '--rules', default='/usr/local/etc/djangoSCA.rules',
                     help='DjangoSCA Rules File (default is "djangoSCA.rules")')
     ap.add_argument('-o', '--output',
                     help='Output Text File (default output to screen)')
