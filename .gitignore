@@ -1,3 +1,7 @@
 classes/*pyc
 tox.ini
 .djangoSCA.py.swp
+MANIFEST
+build
+dist
+*.egg-info
