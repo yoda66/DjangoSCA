@@ -7,7 +7,7 @@ def read(fname):
     return open(os.path.join(os.path.dirname(__file__), fname)).read()
 
 setup(name='DjangoSCA',
-   version='1.3g',
+   version='1.3h',
    description='Django Static Source Code Analyzer',
    author='Joff Thyer',
    author_email='jsthyer@gmail.com',
