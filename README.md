@@ -13,7 +13,9 @@ Django project as an argument to the program, from which it will
 recursively descend through the project files and perform source code
 checks on all python source code, and Django template files.
 
-## Sponsors
+## Credits
 
-[![Black Hills Information Security](http://www.blackhillsinfosec.com/_images/BHIS-Logo.png)](http://www.blackhillsinfosec.com)
-
+DjangoSCA was authored by Joff Thyer with ideas generated in discussion
+with both John Strand and Ethan Robish.  In addition, Ethan assisted in
+contributing source patches, and additional base rules.  Since the initial
+versions, there has been additional community rules contributed also.
